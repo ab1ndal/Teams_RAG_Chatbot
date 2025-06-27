@@ -1,0 +1,34 @@
+[project]
+name = "teams-rag-chatbot"
+version = "0.1.0"
+description = "MS Teams plugin with RAG backend for task input, retrieval, and updates"
+authors = [{ name = "Abhinav B." }]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "openai",
+    "langchain",
+    "langchain-community",
+    "pydantic",
+    "python-multipart",
+    "aiofiles",
+    "python-docx",
+    "pypdf",
+    "pandas",
+    "openpyxl",
+    "tiktoken",
+    "pinecone",
+    "python-dateutil>=2.8.2",
+    "pytest",
+    "pymupdf"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "ruff",
+    "mypy",
+    "pytest",
+    "ipython"
+]

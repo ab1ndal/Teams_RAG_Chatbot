@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+docs/
+index_cache.json
+.venv_local/
+teams_rag_chatbot.egg-info/
