@@ -1,11 +1,27 @@
 // Supabase client
 // web-frontend/src/lib/supabaseClient.ts
 
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+export async function createClient() {
+    const cookieStore = await cookies();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export default supabase;
+    return createServerClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+            getAll(){
+                return cookieStore.getAll();
+            },
+            setAll(cookiesToSet){
+                try{
+                    cookiesToSet.forEach(cookie => cookieStore.set(cookie.name, cookie.value, cookie.options));
+                }
+                catch{
+                    //No Errors caught
+                }
+            }
+        }
+    });
+}

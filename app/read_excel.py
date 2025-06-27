@@ -175,9 +175,10 @@ if __name__ == "__main__":
     #user_instruction = "Show me information about RFI 0026."
     #user_instruction = "Show me the RFI #s that have not been answered. Give me the total count, RFI title and when they were received"
     #user_instruction = "Show me number of RFIs that I received every month. Give me the response in the following format:Month, Year - Count of RFIs"
-    user_instruction = "What is the average turn around time for RFIs for the month of March 2023?"
+    #user_instruction = "What is the average turn around time for RFIs for the month of March 2023?"
     user_instruction = "Categeorize RFIs based on title of the RFI. Tell me type of RFIs and count of RFIs for each type"
     user_instruction = "Split the RFIs into categories based by name. Now create me a pie chart with number of RFIs in each category. Format the Pie Chart beautifully"
+    user_instruction = "Show me all RFIs related to Walls. Give me RFI#: RFI Title"
     code = generate_code(df, metadata, user_instruction)
     #print(code)
     execute_code(code, df, user_instruction)
