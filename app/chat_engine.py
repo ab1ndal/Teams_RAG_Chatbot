@@ -1,7 +1,7 @@
 from app.embedding import embed_text
 from app.pinecone_index import query_index
 from app.document_loader import extract_pdf_page_chunk, extract_docx_chunk, extract_txt_chunk, extract_excel_chunk
-from scripts.utils import load_full_chunk
+from app.utils import load_full_chunk
 
 
 def chat_with_rag(user_query):
