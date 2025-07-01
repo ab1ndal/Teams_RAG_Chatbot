@@ -8,7 +8,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "openai",
-    "langchain",
+    "langchain[anthropic]",
     "langchain-community",
     "pydantic",
     "python-multipart",
@@ -21,7 +21,9 @@ dependencies = [
     "pinecone",
     "python-dateutil>=2.8.2",
     "pytest",
-    "pymupdf"
+    "pymupdf",
+    "langgraph>=0.5.0",
+    "ipykernel>=6.29.5",
 ]
 
 [project.optional-dependencies]

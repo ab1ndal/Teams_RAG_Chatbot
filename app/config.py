@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
 # Load environment variables from .env file
 load_dotenv()
@@ -9,3 +10,5 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
 PINECONE_INDEX = os.getenv("PINECONE_INDEX")
 PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "test")
+
+EXCEL_PATH = Path(os.getenv("EXCEL_PATH"))
