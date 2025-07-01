@@ -1,10 +1,11 @@
 # app/graph/state.py
 
 from typing import TypedDict, Optional, List, Any
+from openai.types.chat import ChatCompletionMessage
 
 class AssistantState(TypedDict, total=False):
     user_id: str                    # Authenticated user
-    query: str                      # Original query text
+    messages: List[ChatCompletionMessage]   # Original user messages
     thread_id: str                  # Thread/session ID
     query_class: str               # 'excel_insight' | 'general' | 'rfi_lookup'
 
