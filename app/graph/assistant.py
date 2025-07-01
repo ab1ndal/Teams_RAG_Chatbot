@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, END, START
 from app.graph.state import AssistantState
 from app.graph.nodes.classify import classify_query
 from app.graph.nodes.excel_insight import generate_code, execute_code
-from app.graph.nodes.rfi_lookup import match_rf_is, load_folder_content, combine_context
+from app.graph.nodes.rfi_lookup import match_rfis, load_folder_content, combine_context
 from app.graph.nodes.generate import generate_answer
 from app.graph.nodes.respond import respond
 from app.services.excel_cache import get_excel_dataframe
@@ -14,12 +14,17 @@ from app.graph.nodes.rag import retrieve_pinecone
 from app.clients.openAI_client import get_client
 
 # Load prerequisites
-excel_df = get_excel_dataframe(file_path=EXCEL_PATH, sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS)
+try:
+    excel_df = get_excel_dataframe(file_path=EXCEL_PATH, sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS)
+except Exception as e:
+    print(f"Failed to load Excel file: {e}")
+    exit(1)
+
 llm_client = get_client()
 
-# Bind Excel nodes with df
-generate_code_node = generate_code(excel_df)
-execute_code_node = execute_code(excel_df)
+# Bind Excel nodes with LLM and df
+generate_code_node = generate_code(llm_client, excel_df)
+execute_code_node = execute_code(llm_client, excel_df)
 
 # Bind LLM client
 classify_node = classify_query(llm_client)
@@ -31,7 +36,7 @@ builder = StateGraph(AssistantState)
 builder.add_node("classify_query", classify_node)
 builder.add_node("generate_code", generate_code_node)
 builder.add_node("execute_code", execute_code_node)
-builder.add_node("match_rf_is", match_rf_is)
+builder.add_node("match_rfis", match_rfis)
 builder.add_node("load_folder_content", load_folder_content)
 builder.add_node("combine_context", combine_context)
 builder.add_node("generate_answer", generate_answer)
