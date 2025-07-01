@@ -11,19 +11,24 @@ from app.graph.nodes.respond import respond
 from app.services.excel_cache import get_excel_dataframe
 from app.config import EXCEL_PATH
 from app.graph.nodes.rag import retrieve_pinecone
+from app.clients.openAI_client import get_client
 
-# Load Excel only once per process
+# Load prerequisites
 excel_df = get_excel_dataframe(EXCEL_PATH)
+llm_client = get_client()
 
 # Bind Excel nodes with df
 generate_code_node = generate_code(excel_df)
 execute_code_node = execute_code(excel_df)
 
+# Bind LLM client
+classify_node = classify_query(llm_client)
+
 # Define LangGraph
 builder = StateGraph(AssistantState)
 
 # Add all nodes
-builder.add_node("classify_query", classify_query)
+builder.add_node("classify_query", classify_node)
 builder.add_node("generate_code", generate_code_node)
 builder.add_node("execute_code", execute_code_node)
 builder.add_node("match_rf_is", match_rf_is)

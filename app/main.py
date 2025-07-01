@@ -3,11 +3,10 @@ from pydantic import BaseModel
 from app.embedding import embed_text
 from app.pinecone_index import query_index
 from app.guardrails import is_query_allowed
-from app.config import OPENAI_API_KEY
-from openai import OpenAI
 from pathlib import Path
+from app.clients.openAI_client import get_client
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = get_client()
 
 app = FastAPI(title="Teams RAG Bot")
 
