@@ -1,4 +1,4 @@
-# app/graph/assistant_graph.py
+# app/graph/assistant.py
 
 from pathlib import Path
 from langgraph.graph import StateGraph, END, START
@@ -9,12 +9,12 @@ from app.graph.nodes.rfi_lookup import match_rf_is, load_folder_content, combine
 from app.graph.nodes.generate import generate_answer
 from app.graph.nodes.respond import respond
 from app.services.excel_cache import get_excel_dataframe
-from app.config import EXCEL_PATH
+from app.config import EXCEL_PATH, REMOVE_COLS, RENAME_COLS, SHEET_NAME, HEADER_ROW
 from app.graph.nodes.rag import retrieve_pinecone
 from app.clients.openAI_client import get_client
 
 # Load prerequisites
-excel_df = get_excel_dataframe(EXCEL_PATH)
+excel_df = get_excel_dataframe(file_path=EXCEL_PATH, sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS)
 llm_client = get_client()
 
 # Bind Excel nodes with df
