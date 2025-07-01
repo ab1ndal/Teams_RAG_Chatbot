@@ -1,7 +1,7 @@
 # app/graph/assistant.py
 
 from pathlib import Path
-from langgraph.graph import StateGraph, END, START
+from langgraph.graph import StateGraph, END
 from app.graph.state import AssistantState
 from app.graph.nodes.classify import classify_query
 from app.graph.nodes.excel_insight import generate_code, execute_code
@@ -12,6 +12,7 @@ from app.services.excel_cache import get_excel_dataframe
 from app.config import EXCEL_PATH, REMOVE_COLS, RENAME_COLS, SHEET_NAME, HEADER_ROW
 from app.graph.nodes.rag import retrieve_pinecone
 from app.clients.openAI_client import get_client
+from app.graph.nodes.guardrails import check_query
 
 # Load prerequisites
 try:
@@ -33,6 +34,7 @@ classify_node = classify_query(llm_client)
 builder = StateGraph(AssistantState)
 
 # Add all nodes
+builder.add_node("check_query", check_query)
 builder.add_node("classify_query", classify_node)
 builder.add_node("generate_code", generate_code_node)
 builder.add_node("execute_code", execute_code_node)
@@ -44,19 +46,26 @@ builder.add_node("respond", respond)
 builder.add_node("retrieve_pinecone", retrieve_pinecone)
 
 # Define graph structure
-builder.set_entry_point("classify_query")
+builder.set_entry_point("check_query")
+builder.add_conditional_edges("check_query", lambda state: "error" in state,{
+        True: "respond",
+        False: "classify_query"
+    }
+)
 builder.add_conditional_edges("classify_query", lambda state: state["query_class"], {
     "excel_insight": "generate_code",
-    "rfi_lookup": "match_rf_is",
+    "rfi_lookup": "match_rfis",
     "general": "retrieve_pinecone"
 })
+
+
 
 # Excel path
 builder.add_edge("generate_code", "execute_code")
 builder.add_edge("execute_code", "respond")
 
 # RFI path
-builder.add_edge("match_rf_is", "load_folder_content")
+builder.add_edge("match_rfis", "load_folder_content")
 builder.add_edge("load_folder_content", "combine_context")
 builder.add_edge("combine_context", "generate_answer")
 builder.add_edge("generate_answer", "respond")
