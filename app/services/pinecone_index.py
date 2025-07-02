@@ -19,4 +19,4 @@ def fetch_vector(id, namespace=None):
 def retrieve_docs(query_vector, top_k=3, namespace=None):
     from app.services.embedding import embed_text
     query_vector = embed_text(query_vector)
-    return index.query(vector=query_vector, top_k=top_k, include_metadata=True, namespace=namespace)
+    return query_index(query_vector, top_k=top_k, namespace=namespace)

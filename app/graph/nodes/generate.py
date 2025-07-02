@@ -5,9 +5,12 @@ from langchain_openai import ChatOpenAI
 
 def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
+        print("Generating answer...")
         if state.get("query_type")=="excel_insight":
             state["final_answer"] = state.get("final_answer", "[No final answer generated]")
         else:
+            for i, doc in enumerate(state['ranked_chunks']):
+                print(f"[{i}]: {doc}")
             sources = "\n".join([f"[{i+1}] {doc['metadata']['source']}" for i, doc in enumerate(state['ranked_chunks'])])
             context = "\n\n".join([f"[{i+1}] {doc['content']}" for i, doc in enumerate(state['ranked_chunks'])])
 

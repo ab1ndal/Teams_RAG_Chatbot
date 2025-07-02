@@ -34,6 +34,7 @@ classify_node = classify_query(classify_llm_client)
 rerank_chunks_node = rerank_chunks(codegen_llm_client)
 rewrite_query_node = rewrite_query(codegen_llm_client)
 generate_answer_node = generate_answer(codegen_llm_client)
+retrieve_pinecone_node = retrieve_pinecone(codegen_llm_client)
 
 # Define LangGraph
 builder = StateGraph(AssistantState)
@@ -48,7 +49,7 @@ builder.add_node("load_folder_content", load_folder_content)
 builder.add_node("combine_context", combine_context)
 builder.add_node("generate_answer", generate_answer_node)
 builder.add_node("respond", respond)
-builder.add_node("retrieve_pinecone", retrieve_pinecone)
+builder.add_node("retrieve_pinecone", retrieve_pinecone_node)
 builder.add_node("rewrite_query", rewrite_query_node)
 builder.add_node("rerank_chunks", rerank_chunks_node)
 
@@ -65,7 +66,11 @@ builder.add_conditional_edges("classify_query", lambda state: state["query_class
     "general": "rewrite_query"
 })
 
-
+builder.add_conditional_edges("retrieve_pinecone", lambda state: "error" in state,{
+        True: "respond",
+        False: "rerank_chunks"
+    }
+)
 
 # Excel path
 builder.add_edge("generate_code", "execute_code")
@@ -77,9 +82,8 @@ builder.add_edge("load_folder_content", "combine_context")
 builder.add_edge("combine_context", "generate_answer")
 
 # General Path
-builder.add_edge("rewrite_query", "rerank_chunks")
-builder.add_edge("rerank_chunks", "retrieve_pinecone")
-builder.add_edge("retrieve_pinecone", "generate_answer")
+builder.add_edge("rewrite_query", "retrieve_pinecone")
+builder.add_edge("rerank_chunks", "generate_answer")
 
 builder.add_edge("generate_answer", "respond")
 

@@ -22,6 +22,7 @@ class AssistantState(TypedDict, total=False):
     # General search context (Pinecone-based)
     retrieved_chunks: List[str]     # Contextual chunks from semantic search
     source_paths: List[str]         # Source file paths from Pinecone
+    ranked_chunks: List[str]        # Ranked chunks from semantic search
 
     # Final result
     final_answer: str               # Response to user
