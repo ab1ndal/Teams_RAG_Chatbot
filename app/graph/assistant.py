@@ -10,7 +10,7 @@ from app.graph.nodes.generate import generate_answer
 from app.graph.nodes.respond import respond
 from app.services.excel_cache import get_excel_dataframe
 from app.config import EXCEL_PATH, REMOVE_COLS, RENAME_COLS, SHEET_NAME, HEADER_ROW
-from app.graph.nodes.rag import retrieve_pinecone
+from app.graph.nodes.rag import retrieve_pinecone, rerank_chunks, rewrite_query
 from app.clients.openAI_client import get_client
 from app.graph.nodes.guardrails import check_query
 
@@ -31,6 +31,9 @@ execute_code_node = execute_code(classify_llm_client, excel_df)
 
 # Bind LLM client
 classify_node = classify_query(classify_llm_client)
+rerank_chunks_node = rerank_chunks(codegen_llm_client)
+rewrite_query_node = rewrite_query(codegen_llm_client)
+generate_answer_node = generate_answer(codegen_llm_client)
 
 # Define LangGraph
 builder = StateGraph(AssistantState)
@@ -43,9 +46,11 @@ builder.add_node("execute_code", execute_code_node)
 builder.add_node("match_rfis", match_rfis)
 builder.add_node("load_folder_content", load_folder_content)
 builder.add_node("combine_context", combine_context)
-builder.add_node("generate_answer", generate_answer)
+builder.add_node("generate_answer", generate_answer_node)
 builder.add_node("respond", respond)
 builder.add_node("retrieve_pinecone", retrieve_pinecone)
+builder.add_node("rewrite_query", rewrite_query_node)
+builder.add_node("rerank_chunks", rerank_chunks_node)
 
 # Define graph structure
 builder.set_entry_point("check_query")
@@ -57,7 +62,7 @@ builder.add_conditional_edges("check_query", lambda state: "error" in state,{
 builder.add_conditional_edges("classify_query", lambda state: state["query_class"], {
     "excel_insight": "generate_code",
     "rfi_lookup": "match_rfis",
-    "general": "retrieve_pinecone"
+    "general": "rewrite_query"
 })
 
 
@@ -70,10 +75,13 @@ builder.add_edge("execute_code", "respond")
 builder.add_edge("match_rfis", "load_folder_content")
 builder.add_edge("load_folder_content", "combine_context")
 builder.add_edge("combine_context", "generate_answer")
-builder.add_edge("generate_answer", "respond")
 
-# Pinecone path
+# General Path
+builder.add_edge("rewrite_query", "rerank_chunks")
+builder.add_edge("rerank_chunks", "retrieve_pinecone")
 builder.add_edge("retrieve_pinecone", "generate_answer")
+
+builder.add_edge("generate_answer", "respond")
 
 # Final node
 builder.set_finish_point("respond")
