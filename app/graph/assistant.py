@@ -21,14 +21,16 @@ except Exception as e:
     print(f"Failed to load Excel file: {e}")
     exit(1)
 
-llm_client = get_client()
+classify_llm_client = get_client(temperature=0)
+base_llm_client = get_client(temperature=0.7)
+codegen_llm_client = get_client(temperature=0.3)
 
 # Bind Excel nodes with LLM and df
-generate_code_node = generate_code(llm_client, excel_df)
-execute_code_node = execute_code(llm_client, excel_df)
+generate_code_node = generate_code(codegen_llm_client, excel_df)
+execute_code_node = execute_code(codegen_llm_client, excel_df)
 
 # Bind LLM client
-classify_node = classify_query(llm_client)
+classify_node = classify_query(classify_llm_client)
 
 # Define LangGraph
 builder = StateGraph(AssistantState)
