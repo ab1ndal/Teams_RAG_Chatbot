@@ -42,7 +42,7 @@ def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSt
 
         completion = client.invoke([
                 {"role": "system", "content": "You are a helpful python data scientist. Use the context to answer clearly and professionally."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt.strip()}
         ])
         answer = completion.content.strip()
         clean_code = re.sub(r"^```(?:python)?|```$", "", answer.strip(), flags=re.MULTILINE)
@@ -101,15 +101,15 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
         === ANALYSIS ===
         <brief insights, issues or observations>
 
-        DO NOT include any headings like 'Generated Code' or 'Code Output'.
-        DO NOT explain the code.
-        DO NOT reprint the code.
-        DO NOT say anything conversational.
-        Return only the FINAL ANSWER and ANALYSIS sections — nothing else.
+        - DO NOT include any headings like 'Generated Code' or 'Code Output'.
+        - DO NOT explain the code.
+        - DO NOT reprint the code.
+        - DO NOT say anything conversational.
+        - Return only the FINAL ANSWER and ANALYSIS sections — nothing else.
         """
         summary = client.invoke([
                 {"role": "system", "content": "You are a strict formatter. Only return the FINAL ANSWER and ANALYSIS sections. Do not return any code or markdown. Never include labels like 'Generated Code' or 'Code Output'."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt.strip()}
             ])
         answer = extract_final_answer(summary.content.strip())
         state["final_answer"] = answer
