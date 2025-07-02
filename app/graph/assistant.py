@@ -16,7 +16,7 @@ from app.graph.nodes.guardrails import check_query
 
 # Load prerequisites
 try:
-    excel_df = get_excel_dataframe(file_path=EXCEL_PATH, sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS)
+    excel_df = get_excel_dataframe(parquet_path=EXCEL_PATH.with_suffix(".parquet"), excel_path=EXCEL_PATH, sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS)
 except Exception as e:
     print(f"Failed to load Excel file: {e}")
     exit(1)
@@ -27,7 +27,7 @@ codegen_llm_client = get_client(temperature=0.3)
 
 # Bind Excel nodes with LLM and df
 generate_code_node = generate_code(codegen_llm_client, excel_df)
-execute_code_node = execute_code(codegen_llm_client, excel_df)
+execute_code_node = execute_code(classify_llm_client, excel_df)
 
 # Bind LLM client
 classify_node = classify_query(classify_llm_client)

@@ -24,16 +24,7 @@ def main():
     # Invoke assistant graph
     final_state = assistant_graph.invoke(state)
 
-    print("\n=== Final Answer ===\n")
     print(final_state.get("final_answer", "[No answer generated]"))
-
-    if "code" in final_state:
-        print("\n=== Generated Code ===\n")
-        print(final_state["code"])
-
-    if "output" in final_state:
-        print("\n=== Code Output ===\n")
-        print(final_state["output"])
 
 if __name__ == "__main__":
     main()
