@@ -1,12 +1,12 @@
-# Teams RAG Chatbot
+# RAG Chatbot
 
-A Microsoft Teams plugin with RAG (Retrieval-Augmented Generation) backend for task input, retrieval, and updates.
+A modern React/Next.js chatbot application with RAG (Retrieval-Augmented Generation) backend for task input, retrieval, and updates.
 
 ## Project Structure
 
 ```
-teams-rag-chatbot/
-├── app/                 # Main application code
+rag-chatbot/
+├── app/                 # Python backend services
 │   ├── __init__.py     # Package initialization
 │   ├── clear_index.py  # Script to clear search indexes
 │   ├── config.py       # Configuration settings
@@ -35,6 +35,11 @@ teams-rag-chatbot/
 │       ├── chat_engine.py  # Legacy chat processing
 │       ├── main.py        # Legacy FastAPI app
 │       └── read_excel.py  # Legacy Excel processing
+├── web-frontend/        # React/Next.js frontend
+│   ├── next-env.d.ts    # Next.js TypeScript configuration
+│   ├── next.config.ts   # Next.js configuration
+│   ├── package.json     # Frontend dependencies
+│   └── tsconfig.json    # TypeScript configuration
 ```
 
 ## Key Components
@@ -167,8 +172,9 @@ teams-rag-chatbot/
 
 ## Setup and Requirements
 
-This project requires Python 3.12 or higher. The main dependencies include:
+Requires Python 3.12 or higher. Main dependencies are managed through pyproject.toml.
 
+Main dependencies include:
 - FastAPI: Web framework
 - OpenAI: Integration with OpenAI services
 - LangChain: Framework for building RAG applications
@@ -176,17 +182,21 @@ This project requires Python 3.12 or higher. The main dependencies include:
 
 ## Development
 
-1. Create a virtual environment and activate it
-2. Install dependencies using `pip install -e .`
+1. Create a virtual environment using uv:
+   ```bash
+   uv init
+   ```
+2. Install dependencies:
+   ```bash
+   uv add
+   ```
 3. Copy `.env.example` to `.env` and configure your environment variables
 4. Run tests using `pytest`
-5. Run the application locally using `python run_local.py`
 
 ## Security
 
 - Never commit `.env` file
 - Keep API keys and sensitive information in environment variables
-- Review and update security configurations in `guardrails.py`
 
 ## License
 
