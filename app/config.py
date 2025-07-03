@@ -35,7 +35,7 @@ JSON_DESCRIPTION = {
     "sample_value": "0016.2"
     },
   "Link": {
-    "description": "File path or hyperlink to the associated RFI document or folder",
+    "description": "File path or hyperlink to the associated RFI document or folder. This is the location where RFI is saved on the network drive.",
     "type": "string (file path)",
     "sample_value": "N:\\2019\\19032.BD - Century City JMB Tower\\CA\\RFI's\\Responded\\0016.2"
   },

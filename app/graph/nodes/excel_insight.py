@@ -11,6 +11,8 @@ from app.graph.state import AssistantState
 from app.config import JSON_DESCRIPTION
 from datetime import datetime
 import re
+import ast
+from pandas import Timestamp, NaT
 
 def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantState], AssistantState]:
     sample_records = df.head(5).to_dict(orient="records")
@@ -18,6 +20,13 @@ def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSt
 
     def _node(state: AssistantState) -> AssistantState:
         instruction = state["messages"][-1]["content"] if state.get("messages") else ""
+
+        if state.get("query_class") == "rfi_lookup":
+            instruction += """
+            The user is looking for information about specific RFIs.
+            Return all information about the RFIs that match the user's query from the dataframe in form of list of dictionaries.
+            """
+            
 
         prompt = f"""
         You are given a pandas DataFrame called `df`.
@@ -82,30 +91,35 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
 
         state["output"] = output
 
-        # Optionally summarize output via LLM
+        if state.get("query_class") == "rfi_lookup":
+            data_str_clean = output.replace("Timestamp(", "").replace(")", "").replace("NaT", "None")
+            state["rfi_matches"] = ast.literal_eval(data_str_clean)
+            return state
+
+        
         prompt = f"""
-        The user instruction was: 
-        {instruction}
+            The user instruction was: 
+            {instruction}
 
-        The following code was executed:
-        {code}
+            The following code was executed:
+            {code}
 
-        It produced this output:
-        {output}
+            It produced this output:
+            {output}
 
-        Return only the following, exactly as formatted:
+            Return only the following, exactly as formatted:
 
-        === FINAL ANSWER ===
-        <clean and readable output from the code, shown as a plain table or list — no markdown>
+            === FINAL ANSWER ===
+            <clean and readable output from the code, shown as a plain table or list — no markdown>
 
-        === ANALYSIS ===
-        <brief insights, issues or observations>
+            === ANALYSIS ===
+            <brief insights, issues or observations>
 
-        - DO NOT include any headings like 'Generated Code' or 'Code Output'.
-        - DO NOT explain the code.
-        - DO NOT reprint the code.
-        - DO NOT say anything conversational.
-        - Return only the FINAL ANSWER and ANALYSIS sections — nothing else.
+            - DO NOT include any headings like 'Generated Code' or 'Code Output'.
+            - DO NOT explain the code.
+            - DO NOT reprint the code.
+            - DO NOT say anything conversational.
+            - Return only the FINAL ANSWER and ANALYSIS sections — nothing else.
         """
         summary = client.invoke([
                 {"role": "system", "content": "You are a strict formatter. Only return the FINAL ANSWER and ANALYSIS sections. Do not return any code or markdown. Never include labels like 'Generated Code' or 'Code Output'."},

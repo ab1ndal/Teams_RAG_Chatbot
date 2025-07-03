@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Literal
 from langchain_openai import ChatOpenAI
 from app.graph.state import AssistantState
+from app.config import JSON_DESCRIPTION
 
 class QueryClassification(BaseModel):
     query_class: Literal["excel_insight", "rfi_lookup", "general"] = Field(
@@ -15,27 +16,29 @@ def classify_query(client: ChatOpenAI):
 
     def _node(state: AssistantState):
         last_message = state["messages"][-1] if state.get("messages") else {"content": ""}
-        system_prompt = """
+        system_prompt = f"""
         You are a router for an assistant that classifies user queries into one of three categories:
 
-        1. **excel_insight**: Queries that require analyzing structured Excel logs. These involve tasks such as summarizing, filtering, counting, computing durations, or finding trends across multiple RFIs stored in a spreadsheet. Examples:
-        - "How many RFIs are still open?"
-        - "Show the average turnaround time for RFIs last month"
-        - "List all unanswered RFIs and how long they have been pending"
+        1. **excel_insight**: Queries that involve structured data analysis or retrieval from an Excel-based RFI log. This includes:
+           - Summarizing, filtering, counting, grouping, or computing time-based insights
+           - Answering questions about specific entries or attributes stored in the log
+           - Queries that rely on structured fields such as dates, statuses, internal notes, file links, and numeric IDs
+           - If the query can be answered by referencing structured tabular values described in the JSON schema below, it belongs in this class
 
-        2. **rfi_lookup**: Queries that ask for the full content, folder path, or server location of specific RFIs. These are lookup-style questions involving filenames or document access. Examples:
-        - "Open RFI 0032 and tell me what it says"
-        - "What did we respond in RFI 0045?"
-        - "Find the folder for RFI 0023.1"
+        2. **rfi_lookup**: Queries that require accessing or quoting the full document content of a specific RFI, or locating its original folder or file.
+           - This includes questions about what a document “says” or requests to "open", "find", or "read" a particular RFI file
 
-        3. **general**: Any other queries unrelated to the Excel data or RFI documents. These may involve general company questions, external topics, or casual queries. Examples:
-        - "Who is our client on this project?"
-        - "What does NYA specialize in?"
+        3. **general**: Any other query unrelated to structured RFI logs or document lookup. These may include questions about company history, projects, scheduling, people, or unrelated topics.
+
+        Here is the JSON schema describing the fields available in the Excel RFI log:
+        {JSON_DESCRIPTION}
+
+        Use this to decide whether the query is answerable from structured Excel data or requires direct access to the document text.
 
         Respond only with a JSON object matching the schema.
         """
         response = structured_llm.invoke([
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": system_prompt.strip()},
                 {"role": "user", "content": last_message["content"]}
         ])
         state["query_class"] = response.query_class
