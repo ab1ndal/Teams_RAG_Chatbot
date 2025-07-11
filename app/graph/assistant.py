@@ -9,14 +9,17 @@ from app.graph.nodes.rfi_lookup import match_rfis, rfi_combine_context
 from app.graph.nodes.generate import generate_answer
 from app.graph.nodes.respond import respond
 from app.services.excel_cache import get_excel_dataframe
-from app.config import EXCEL_PATH, REMOVE_COLS, RENAME_COLS, SHEET_NAME, HEADER_ROW
+from app.config import EXCEL_PATH, REMOVE_COLS, RENAME_COLS, SHEET_NAME, HEADER_ROW, USECOLS
 from app.graph.nodes.rag import retrieve_pinecone, rerank_chunks, rewrite_query
 from app.clients.openAI_client import get_client
 from app.graph.nodes.guardrails import check_query
 
 # Load prerequisites
 try:
-    excel_df = get_excel_dataframe(parquet_path=EXCEL_PATH.with_suffix(".parquet"), excel_path=EXCEL_PATH, sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS)
+    print("Loading Excel file...")
+    print(f"Excel path: {EXCEL_PATH}")
+    excel_df = get_excel_dataframe(parquet_path=EXCEL_PATH.with_suffix(".parquet"), excel_path=EXCEL_PATH, 
+    sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS, usecols=USECOLS,verbose=True)
 except Exception as e:
     print(f"Failed to load Excel file: {e}")
     exit(1)

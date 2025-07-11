@@ -6,3 +6,4 @@ docs/
 index_cache.json
 .venv_local/
 teams_rag_chatbot.egg-info/
+classified_rfis.xlsx

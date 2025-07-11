@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
 from pinecone import Pinecone
-from app.document_loader import (
+from app.services.document_loader import (
     extract_pdf_chunks,
     extract_docx_chunk,
     extract_txt_chunk,
-    extract_excel_chunk
+    extract_excel_chunk,
+    extract_msg_chunk
 )
 from app.config import PINECONE_API_KEY, PINECONE_ENV, PINECONE_INDEX
 
@@ -20,8 +21,10 @@ def extract_chunks(file_path: str, chunk_size: int = 1000, overlap: int = 200) -
         return extract_docx_chunk(file_path, chunk_size=chunk_size, overlap=overlap)
     elif ext in [".txt"]:
         return extract_txt_chunk(file_path, chunk_size=chunk_size, overlap=overlap)
-    elif ext in [".xls", ".xlsx", ".xlsm"]:
-        return extract_excel_chunk(file_path, chunk_size=chunk_size, overlap=overlap)
+    #elif ext in [".xls", ".xlsx", ".xlsm"]:
+    #    return extract_excel_chunk(file_path, chunk_size=chunk_size, overlap=overlap)
+    elif ext in [".msg"]:
+        return extract_msg_chunk(file_path, chunk_size=chunk_size, overlap=overlap)
     else:
         print(f"❌ Unsupported file type: {ext}")
         return []
@@ -45,7 +48,7 @@ def clear_index():
     index.delete(delete_all=True)
     print("✅ Cleared all vectors from the index.")
 
-    cache_file = "index_cache.json"
+    cache_file = "../index_cache.json"
     if os.path.exists(cache_file):
         os.remove(cache_file)
         print(f"✅ Deleted cache file: {cache_file}")

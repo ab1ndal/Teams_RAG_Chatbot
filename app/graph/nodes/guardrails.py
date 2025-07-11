@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # === Layer 1: Keyword Blocking ===
 BLOCKED_KEYWORDS = {
     "salary", "payroll", "ssn", "social security", "password",
-    "private key", "medical", "credit card", "classified", "top secret"
+    "private key", "medical", "credit card"
 }
 
 # === Layer 2: Regex Pattern Matching ===

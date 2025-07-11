@@ -12,6 +12,7 @@ def match_rfis(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]
         for rfi in state["rfi_matches"]:
             folder_paths.append(rfi['Link'])
         state["rfi_folder_paths"] = folder_paths
+        print(state["rfi_matches"])
         print(state["rfi_folder_paths"])
         state["folder_contents"] = []
         return state
@@ -22,3 +23,6 @@ def rfi_combine_context(client: ChatOpenAI) -> Callable[[AssistantState], Assist
         state["context"] = ""
         return state
     return _node
+
+def query_rfi_chunks(query:str, top_k:int = 10):
+    pass

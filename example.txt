@@ -1,0 +1,38 @@
+Example 1:
+
+Analyze the DataFrame `df` and classify each RFI into one of **five categories** based on its `RFI Description` and `Internal NYA Comments`:
+
+Categories and Matching Keywords (case-insensitive):
+
+1. **Structural Scope** — match any of: "structural", "concrete", "steel", "beam", "column", "load", "slab", "rebar", "footing", "shear", "seismic"
+2. **Field Installation Issues** — match any of: "incorrect", "field condition", "existing", "as-built", "site issue", "fix", "field"
+3. **Non-Structural Scope** — match any of: "light gauge", "architectural", "mep", "façade", "drywall", "partition", "shoring", "non-structural", "response per others", "no structural input"
+4. **Proposed Design Changes** — match any of: "value engineering", "alternate design", "change request", "modify", "revised", "proposed"
+5. **Other Out-of-Scope** — match any of: "outside scope", "not our scope", "unforeseen", "out-of-scope", "out of scope", "not structural"
+
+**Classification Logic**:
+- First perform a **case-insensitive keyword match** across both `RFI Description` and `Internal NYA Comments`.
+- If a match is found, classify immediately into the corresponding category.
+- If no keywords match, and the RFI appears potentially out-of-scope or ambiguous, use the `client` (a ChatOpenAI instance from `langchain_openai`) to classify it.
+- The LLM should be used **only for unclassified cases**, with **at most 20 LLM calls per run** to avoid latency.
+- If the classification returned by the LLM is not one of the five valid categories, skip the RFI.
+
+**LLM Call Format** (only for unmatched rows):
+- Use one `client.ainvoke()` call per RFI.
+- Combine both fields as input and ask the model to return only the category name (verbatim).
+- Example message format:
+  - System: "You are an expert assistant classifying RFIs into exactly one of 5 categories."
+  - User: "Classify the following RFI into one of: Structural Scope, Field Installation Issues, Non-Structural Scope, Proposed Design Changes, Other Out-of-Scope.\\n\\nRFI Description: ...\\nComments: ..."
+
+**Output**:
+- Create an Excel file named `classified_rfis.xlsx` with five sheets — one per category.
+- Each sheet must contain the following columns: `RFI #`, `RFI Description`, `Internal NYA Comments`, `Business Days`.
+
+**Technical Requirements**:
+- Use only modern pandas (v2.3.0+) methods — avoid deprecated APIs.
+- Use `.copy()` when modifying slices to avoid `SettingWithCopyWarning`.
+- Use `.fillna("")` to handle missing values in the relevant columns.
+- Use `asyncio.Semaphore` to limit concurrent LLM calls.
+- Save the Excel file using `with ExcelWriter(...) as writer: ...`.
+
+Execute the classification and write the final Excel output to disk.

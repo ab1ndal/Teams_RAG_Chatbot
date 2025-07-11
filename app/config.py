@@ -15,18 +15,22 @@ PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "test")
 # Excel Config
 EXCEL_PATH = Path(os.getenv("EXCEL_PATH"))
 REMOVE_COLS = [
-    "Overdue Check", 
-    "Unnamed: 14", 
-    "Backup comments in correct order from Backup File"
+    "Total Days",
+    "Priority",
+    #"Overdue Check", 
+    #"Unnamed: 14", 
+    #"Backup comments in correct order from Backup File"
 ]
 RENAME_COLS = {
-    "Unnamed: 1": "Link", 
+    #"Unnamed: 1": "Link",
+    "L": "Link", 
     "Date\nReceived": "Date Received", 
     "Date\nRequested": "Date Requested", 
     "Date\nSent": "Date Sent"
 }
 SHEET_NAME = "RFIs"
-HEADER_ROW = 5
+HEADER_ROW = 11 #5
+USECOLS = "A:N"
 
 JSON_DESCRIPTION = {
   "RFI #": {
@@ -74,8 +78,8 @@ JSON_DESCRIPTION = {
     "type": "integer or null",
     "sample_value": 4
   },
-  "Ans. By": {
-    "description": "Initials or name of the NYA team member who answered the RFI",
+  "Ball in Court": {
+    "description": "Initials or name of the NYA team members who are working on the RFI",
     "type": "string or null",
     "sample_value": "DT"
   },

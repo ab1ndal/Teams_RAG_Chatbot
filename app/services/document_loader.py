@@ -4,6 +4,7 @@ from langchain_community.document_loaders import (
     PyMuPDFLoader,
     Docx2txtLoader,
     TextLoader,
+    OutlookMessageLoader
 )
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pandas as pd
@@ -68,6 +69,21 @@ def extract_txt_chunk(file_path: str, batch_size: int = 30, chunk_size: int = 10
         print(f"❌ TXT error in {file_path}: {e}")
         return []
 
+def extract_msg_chunk(file_path: str, batch_size: int = 30, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
+    try:
+        loader = OutlookMessageLoader(file_path)
+        docs = loader.load()  # returns a single Document usually
+
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
+        chunks = []
+        for i in range(0, len(docs), batch_size):
+            batch_docs = docs[i:i + batch_size]
+            batch_chunks = splitter.split_documents(batch_docs)
+            chunks.extend([chunk.page_content for chunk in batch_chunks])
+        return chunks
+    except Exception as e:
+        print(f"❌ MSG error in {file_path}: {e}")
+        return []
 
 def extract_excel_chunk(file_path: str, row_block_size: int = 30, row_overlap: int = 5, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
     try:

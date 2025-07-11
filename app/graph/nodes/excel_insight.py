@@ -5,14 +5,15 @@ import re
 import json
 from typing import Callable
 import pandas as pd
-#from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from app.graph.state import AssistantState
 from app.config import JSON_DESCRIPTION
 from datetime import datetime
-import re
 import ast
-from pandas import Timestamp, NaT
+from pandas import Timestamp, NaT, ExcelWriter
+from io import BytesIO
+import asyncio
+import matplotlib.pyplot as plt
 
 def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantState], AssistantState]:
     sample_records = df.head(5).to_dict(orient="records")
@@ -21,32 +22,86 @@ def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSt
     def _node(state: AssistantState) -> AssistantState:
         instruction = state["messages"][-1]["content"] if state.get("messages") else ""
 
+        print(state)
+
         if state.get("query_class") == "rfi_lookup":
             instruction += """
             The user is looking for information about specific RFIs.
             Return all information about the RFIs that match the user's query from the dataframe in form of list of dictionaries.
             """
             
+        if state.get("query_subclass") == "no_llm":
+            prompt = f"""
+            You are given a pandas dataframe called `df`
+            Context:
+            - Sample records: {sample_records}
+            - Metadata: {json.dumps(metadata)}
 
-        prompt = f"""
-        You are given a pandas DataFrame called `df`.
+            Your job is to write a **clean, minimal Python function** that performs the following user-defined task:
+            {instruction}
 
-        - Sample records: {sample_records}
-        - Metadata: {json.dumps(metadata)}
-        - Task: The user has also provided the following instruction:
-        {instruction}
+            FOLLOW THE GUIDELINES EXACTLY BELOW. NO DEVIATIONS ARE ALLOWED.
 
-        Write a clean, minimal Python function that:
-        - Uses the given `df` directly (DO NOT define or read `df` in your code).
-        - Includes all required `import` statements.
-        - Handles missing or malformed data gracefully (e.g., use `.dropna()` or `errors='coerce'`).
-        - Avoids `SettingWithCopyWarning` (use `.copy()` before modifying slices).
-        - Returns or prints clear output (tables, plots, etc.), not just variable assignments.
-        - Avoids any file I/O or system access.
-        - Executes the function at the end so the result is printed or visualized.
-        - DO NOT include sample data, test code, or markdown — only return valid Python code.
+            GUIDELINES:
+            - Use the provided `df` directly. DO NOT redefine, re-import, or reload it.
+            - Use only modern pandas (v2.3.0+) methods. DO NOT use deprecated methods like `.append()` or `.ix`.
+            - Use `.copy()` before modifying any filtered DataFrame to avoid `SettingWithCopyWarning`.
+            - Handle missing or malformed data gracefully (e.g., with `.dropna()`, `.fillna()`, or `errors='coerce'`).
+            - Include all required imports (`pandas`, `openpyxl`, etc.) at the top of the script.
+            - If the task involves saving, visualizing, or printing results, ensure those are clearly produced.
+            - Ensure the final result is printed using print(...) — do not rely on return values alone.
+            - Ensure that the function is run with the provided `df` argument.
+            
+            Strict Output Rule:
+            Return ONLY valid, executable Python code. Do not include markdown, explanations, sample data, or test code.
+            """
+        else:
+            prompt = f"""
+            You are given the following. These will be passed to the function at runtime as arguments.
 
-        Return ONLY the raw code (no markdown, explanation, or extra text).
+            - A pandas DataFrame named `df` that is already defined and contains tabular data.
+            - A `client` instance of `ChatOpenAI` from `langchain_openai`, already initialized and passed in. DO NOT import, define or reinitialize it.
+
+            Your job is to write a **clean, minimal Python function** that performs the following user-defined task:
+            {instruction}
+
+            FOLLOW THE GUIDELINES EXACTLY BELOW. NO DEVIATIONS ARE ALLOWED.
+
+            Context:
+            - Sample records: {sample_records}
+            - Metadata: {json.dumps(metadata)}
+
+            Guidelines:
+            - Use the provided `df` directly. DO NOT redefine, re-import, or reload it.
+            - If semantic interpretation, classification, question answering, or structured extraction is needed, use the `client`.
+            - If multiple rows require semantic classification, use `asyncio.gather()` to process them concurrently.
+            - Use a concurrency control pattern like `semaphore = asyncio.Semaphore(5)` to rate-limit concurrent LLM calls.
+            - Define an async helper like:
+
+                async def classify_row(row):
+                    async with semaphore:
+                        messages = [
+                            {{ "role": "system", "content": "You are an expert assistant that classifies RFIs." }},
+                            {{ "role": "user", "content": f"Classify this RFI:\\nDescription: {{row['RFI Description']}}\\nComments: {{row['Internal NYA Comments']}}" }}
+                        ]
+                        response = await client.ainvoke(messages)
+                        return response.content.strip()
+
+            - Then call:
+                results = await asyncio.gather(*[classify_row(row) for _, row in unclassified_df.iterrows()])
+
+            - Assign the results back to the DataFrame, row by row.
+            - Use only modern pandas (v2.3.0+) methods. DO NOT use deprecated methods like `.append()` or `.ix`.
+            - Use `.copy()` before modifying any filtered DataFrame to avoid `SettingWithCopyWarning`.
+            - Handle missing or malformed data gracefully (e.g., with `.dropna()`, `.fillna()`, or `errors='coerce'`).
+            - Wrap the main logic in `async def` and call it using `asyncio.run(...)` at the end.
+            - Include all required imports (`pandas`, `asyncio`, `openpyxl`, etc.) at the top of the script.
+            - If the task involves saving, visualizing, or printing results, ensure those are clearly produced.
+            - DO NOT access `response['choices']` or `response['message']`. Use `response.content`.
+            - Ensure the final result is printed using print(...) — do not rely on return values alone.
+            
+            Strict Output Rule:
+            Return ONLY valid, executable Python code. Do not include markdown, explanations, sample data, or test code.
         """
 
         completion = client.invoke([
@@ -62,12 +117,13 @@ def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSt
 def extract_final_answer(text: str) -> str:
     # Remove leading/trailing whitespace
     text = text.strip()
-    pattern = r"=== FINAL ANSWER ===\s*(.*?)\s*=== ANALYSIS ===\s*(.*)"
+    pattern = r"=== CODE ===\s*(.*?)\s*=== FINAL ANSWER ===\s*(.*?)\s*=== ANALYSIS ===\s*(.*)"
     match = re.search(pattern, text, re.DOTALL)
     if match:
-        final_answer = match.group(1).strip()
-        analysis = match.group(2).strip()
-        return f"=== FINAL ANSWER ===\n{final_answer}\n\n=== ANALYSIS ===\n{analysis}"
+        code = match.group(1).strip()
+        final_answer = match.group(2).strip()
+        analysis = match.group(3).strip()
+        return f"=== CODE ===\n{code}\n\n=== FINAL ANSWER ===\n{final_answer}\n\n=== ANALYSIS ===\n{analysis}"
 
     else:
         return text.strip()  # fallback
@@ -81,7 +137,7 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
         redirected_output = sys.stdout = io.StringIO()
 
         try:
-            local_vars = {"df": df}
+            local_vars = {"df": df, "client": client}
             exec(code, globals(), local_vars)
             output = redirected_output.getvalue()
         except Exception as e:
@@ -109,20 +165,36 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
 
             Return only the following, exactly as formatted:
 
+            === CODE ===
+            <the code that was executed>
+
             === FINAL ANSWER ===
-            <clean and readable output from the code, shown as a plain table or list — no markdown>
+            <clean and readable output from the code, shown as a plain table or list>
 
             === ANALYSIS ===
-            <brief insights, issues or observations>
+            <brief explanation of the method used>
+            <brief insights, issues, assumptions, or observations>
 
-            - DO NOT include any headings like 'Generated Code' or 'Code Output'.
-            - DO NOT explain the code.
-            - DO NOT reprint the code.
+            Guidelines:
+            - DO NOT return markdown or bullets.
+            - Provide a concise paragraph that summarizes the approach and what the code is doing.
+            - If applicable, highlight any assumptions, possible issues, or the reasoning behind using specific methods.
             - DO NOT say anything conversational.
-            - Return only the FINAL ANSWER and ANALYSIS sections — nothing else.
+            - Return only the FINAL ANSWER, ANALYSIS, and CODE sections — nothing else.
+        
+            Example:
+            === CODE ===
+            print("hello")
+
+            === FINAL ANSWER ===
+            hello
+
+            === ANALYSIS ===
+            This code prints a greeting. No input/output issues expected.
         """
+
         summary = client.invoke([
-                {"role": "system", "content": "You are a strict formatter. Only return the FINAL ANSWER and ANALYSIS sections. Do not return any code or markdown. Never include labels like 'Generated Code' or 'Code Output'."},
+                {"role": "system", "content": "You are a strict formatter. Only return the FINAL ANSWER, ANALYSIS and CODE sections. Do not return any markdown."},
                 {"role": "user", "content": prompt.strip()}
             ])
         answer = extract_final_answer(summary.content.strip())
