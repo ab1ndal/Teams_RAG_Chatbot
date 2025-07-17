@@ -36,3 +36,44 @@ Categories and Matching Keywords (case-insensitive):
 - Save the Excel file using `with ExcelWriter(...) as writer: ...`.
 
 Execute the classification and write the final Excel output to disk.
+
+
+
+Example 2:
+Plot me number of RFIs I am receiving per month in a beautiful line plot. Keep the x axis clean. Also add a dashed line for the average.
+
+
+
+Example 3:
+I want to find extract location indicators from RFI 2595, based only on its RFI description
+1. Use a language model (already available as langchain_openai.ChatOpenAI `client`) to extract keywords
+2. The function must accept both `df` and `client` as arguments.
+3. The function must print a list of location indicators.
+4. DO NOT print any additional information.
+
+
+Example 4:
+I want to find RFIs in the same or nearby location as RFI 2595, based only on its description.
+Use the language model (client) to:
+1. Extract location keywords from RFI 2595 as a comma separated string.
+2. Generate common variants (like “NE” for “North East”, or “L1” for “Level 1”).
+3. Use Pydantic to validate the location keywords. This should be in the form of a list of strings. 
+4. DO NOT generate any additional information.
+5. Once the validated list is generated, print the list.
+6. Give a detailed prompt to the LLM to enforce all the above steps. DO NOT deviate.
+
+
+Then:
+1. Use regex and fuzzy matching to check if any other RFI descriptions match these keywords or variants.
+2. If matched, classify as "Related Location", otherwise "Unrelated".
+3. Do not use the LLM for classification — only for keyword extraction.
+
+Save the results to related_to_rfi_2595.xlsx with columns: RFI #, RFI Description, Classification.
+All logic must stay inside one function: async def main(df, client)
+Print only errors, use modern pandas, and end with: asyncio.run(main(df, client))
+
+
+
+Example 5:
+Create a line plot showing the following: number of outstanding RFIs, number of RFIs received  and RFIs responded to in each week. Create a beautiful plot with clean X axis. Make Responded  RFIs and number of RFIs received as vertical bars on the plot. Keep outstanding RFIs as line plot. Make the bar plots as separate 
+bars. Donot overlap them. Keep the X axis organized and clean

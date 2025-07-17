@@ -1,4 +1,4 @@
-# File: scripts/test_multi_input.py
+# File: tests/test_multi_input.py
 import sys
 from pathlib import Path
 

@@ -1,7 +1,7 @@
 # app/graph/assistant.py
 
 from pathlib import Path
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph
 from app.graph.state import AssistantState
 from app.graph.nodes.classify import classify_query
 from app.graph.nodes.excel_insight import generate_code, execute_code
@@ -16,8 +16,8 @@ from app.graph.nodes.guardrails import check_query
 
 # Load prerequisites
 try:
-    print("Loading Excel file...")
-    print(f"Excel path: {EXCEL_PATH}")
+    #print("Loading Excel file...")
+    #print(f"Excel path: {EXCEL_PATH}")
     excel_df = get_excel_dataframe(parquet_path=EXCEL_PATH.with_suffix(".parquet"), excel_path=EXCEL_PATH, 
     sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS, usecols=USECOLS,verbose=True)
 except Exception as e:
@@ -27,10 +27,11 @@ except Exception as e:
 classify_llm_client = get_client(temperature=0)
 base_llm_client = get_client(temperature=0.7)
 codegen_llm_client = get_client(temperature=0.3)
+fast_classifier = get_client(model="gpt-4o-mini", temperature=0)
 
 # Bind Excel nodes with LLM and df
 generate_code_node = generate_code(codegen_llm_client, excel_df)
-execute_code_node = execute_code(classify_llm_client, excel_df)
+execute_code_node = execute_code(fast_classifier, excel_df)
 match_rfis_node = match_rfis(codegen_llm_client)
 rfi_combine_context_node = rfi_combine_context(codegen_llm_client)
 

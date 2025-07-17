@@ -1,6 +1,6 @@
 # app/graph/nodes/classify.py
-from pydantic import BaseModel, Field
-from typing import Literal, Optional
+from pydantic import BaseModel, Field, ValidationError
+from typing import Literal, Optional, List
 from langchain_openai import ChatOpenAI
 from app.graph.state import AssistantState
 from app.config import JSON_DESCRIPTION

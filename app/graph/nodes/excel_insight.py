@@ -3,7 +3,7 @@ import sys
 import io
 import re
 import json
-from typing import Callable
+from typing import Callable, List, Literal
 import pandas as pd
 from langchain_openai import ChatOpenAI
 from app.graph.state import AssistantState
@@ -14,6 +14,8 @@ from pandas import Timestamp, NaT, ExcelWriter
 from io import BytesIO
 import asyncio
 import matplotlib.pyplot as plt
+import fuzzywuzzy
+
 
 def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantState], AssistantState]:
     sample_records = df.head(5).to_dict(orient="records")
@@ -21,8 +23,6 @@ def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSt
 
     def _node(state: AssistantState) -> AssistantState:
         instruction = state["messages"][-1]["content"] if state.get("messages") else ""
-
-        print(state)
 
         if state.get("query_class") == "rfi_lookup":
             instruction += """
@@ -138,7 +138,7 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
 
         try:
             local_vars = {"df": df, "client": client}
-            exec(code, globals(), local_vars)
+            exec(code, local_vars)
             output = redirected_output.getvalue()
         except Exception as e:
             output = f"❌ Error during execution: {str(e)}"

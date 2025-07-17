@@ -7,9 +7,9 @@ def get_excel_dataframe(parquet_path: Path, excel_path: Path, sheet_name: str, h
         df = pd.read_parquet(parquet_path)
         print("Parquet file loaded.")
         if verbose:
-            print("Sample row:", df.iloc[5].to_dict())
+            print("Sample row:", df.iloc[0].to_dict())
             print("Columns:", df.columns.tolist())
-            print("Length:", len(df))
+            print("Number of records:", len(df))
     else:
         if not excel_path.exists():
             raise FileNotFoundError(f"File not found: {excel_path}")
@@ -21,7 +21,7 @@ def get_excel_dataframe(parquet_path: Path, excel_path: Path, sheet_name: str, h
             df[col] = df[col].astype(str)
 
         if verbose:
-            print("Sample row:", df.iloc[5].to_dict())
+            print("Sample row:", df.iloc[0].to_dict())
             print("Columns:", df.columns.tolist())
             print("Number of records:", len(df))
         df.to_parquet(parquet_path, index=False)
