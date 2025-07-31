@@ -45,14 +45,14 @@ rag-chatbot/
 ## Key Components
 
 - `app/graph/assistant.py`: Implements the main assistant logic using LangGraph framework, including:
+
   - Query classification
   - Excel insights generation and execution
   - RFI lookup and context combination
   - Answer generation
-
 - `app/graph/state.py`: Manages the assistant's state through the `AssistantState` class
-
 - `app/graph/nodes/`: Contains specialized processing nodes:
+
   - `classify.py`: Handles query classification and intent detection
   - `excel_insight.py`: Generates and executes Excel code
   - `generate.py`: Implements answer generation
@@ -60,121 +60,65 @@ rag-chatbot/
   - `rag.py`: Contains RAG implementation
   - `respond.py`: Formats responses
   - `rfi_lookup.py`: Handles RFI lookups and context combination
-
 - `app/clients/openAI_client.py`: Implements OpenAI API client for LLM interactions
-
 - `app/services/`: Contains service implementations:
+
   - `embedding.py`: Handles text embedding generation
   - `excel_cache.py`: Manages Excel data caching
   - `pinecone_index.py`: Handles vector store operations
-
+  - `utils.py`: Contains general utility functions
+  - `smart_indexer.py`: Implements smart indexing functionality
+  - `document_loader.py`: Provides utilities for: Document processing, File handling, Text extraction
 - `app/config.py`: Contains configuration settings for:
+
   - API integrations
   - Model settings
   - Vector store configuration
-
-- `app/document_loader.py`: Provides utilities for:
-  - Document processing
-  - File handling
-  - Text extraction
-
-- `app/smart_indexer.py`: Implements smart indexing functionality
-
-- `app/utils.py`: Contains general utility functions
-
-- `app/clear_index.py`: Utility script for:
-  - Resetting vector store
-  - Clearing document embeddings
-
-- `app/outdated/`: Contains legacy files that should be removed:
-  - `chat_engine.py`: Legacy chat processing
-  - `main.py`: Legacy FastAPI app
-  - `read_excel.py`: Legacy Excel processing
-
-## Key Components
-
-- `app/graph/assistant.py`: Implements the main assistant logic using LangGraph framework, including:
-  - Query classification
-  - Excel insights generation and execution
-  - RFI lookup and context combination
-  - Answer generation
-
-- `app/graph/state.py`: Manages the assistant's state through the `AssistantState` class
-
-- `app/graph/nodes/`: Contains specialized processing nodes:
-  - `classify.py`: Handles query classification and intent detection
-  - `excel_insight.py`: Generates and executes Excel code
-  - `generate.py`: Implements answer generation
-  - `guardrails.py`: Security and validation rules
-  - `rag.py`: Contains RAG implementation
-  - `respond.py`: Formats responses
-  - `rfi_lookup.py`: Handles RFI lookups and context combination
-
-- `app/clients/openAI_client.py`: Implements OpenAI API client for LLM interactions
-
-- `app/services/`: Contains service implementations:
-  - `embedding.py`: Handles text embedding generation
-  - `excel_cache.py`: Manages Excel data caching
-  - `pinecone_index.py`: Handles vector store operations
-
-- `app/config.py`: Contains configuration settings for:
-  - API integrations
-  - Model settings
-  - Vector store configuration
-
-- `app/document_loader.py`: Provides utilities for:
-  - Document processing
-  - File handling
-  - Text extraction
-
-- `app/smart_indexer.py`: Implements smart indexing functionality
-
-- `app/utils.py`: Contains general utility functions
-
-- `app/clear_index.py`: Utility script for:
-  - Resetting vector store
-  - Clearing document embeddings
-
-- `app/outdated/`: Contains legacy files that should be removed:
-  - `chat_engine.py`: Legacy chat processing
-  - `main.py`: Legacy FastAPI app
-  - `read_excel.py`: Legacy Excel processing
 
 ## Potential Improvements
 
 1. **Performance Optimization**:
+
    - Implement caching for frequently accessed documents
    - Add batch processing for document ingestion
    - Optimize vector store operations
    - Implement request queuing
-
 2. **Feature Additions**:
+
    - Add support for more document types
    - Implement version control for documents
    - Add document metadata management
    - Implement user-specific document access control
+   - Add support for searching through RFIs.
 
 3. **Testing Improvements**:
+
    - Add more integration tests
    - Implement end-to-end testing
    - Add performance benchmarks
-
 4. **Documentation**:
+
    - Add API documentation
    - Create deployment guides
    - Document configuration options
-
 5. **Monitoring**:
+
    - Add request/response logging
    - Implement error tracking
    - Add performance metrics
    - Create health check endpoints
+
+6. **Deployment**:
+   - Create a front end for the chatbot
+   - Deploy the backend
+   - Deploy the frontend
 
 ## Setup and Requirements
 
 Requires Python 3.12 or higher. Main dependencies are managed through pyproject.toml.
 
 Main dependencies include:
+
 - FastAPI: Web framework
 - OpenAI: Integration with OpenAI services
 - LangChain: Framework for building RAG applications
@@ -183,15 +127,22 @@ Main dependencies include:
 ## Development
 
 1. Create a virtual environment using uv:
+
    ```bash
    uv init
    ```
 2. Install dependencies:
+
    ```bash
    uv add
    ```
 3. Copy `.env.example` to `.env` and configure your environment variables
-4. Run tests using `pytest`
+4. Run the backend using:
+
+   ```bash
+   .venv/Scripts/activate
+   python tests/test_multi_input.py
+   ```
 
 ## Security
 

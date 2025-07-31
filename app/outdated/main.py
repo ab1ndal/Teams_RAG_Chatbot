@@ -29,7 +29,7 @@ async def rag_query(request: QueryRequest):
     query_vector = embed_text(query_text)
 
     # 3. Retrieve chunks from Pinecone
-    results = query_index(query_vector, top_k=10)
+    results = query_index(query_vector, top_k=50)
     matches = results.get("matches", [])
     if not matches:
         return QueryResponse(answer="❌ No relevant documents found.")

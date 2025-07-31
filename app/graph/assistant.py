@@ -16,8 +16,8 @@ from app.graph.nodes.guardrails import check_query
 
 # Load prerequisites
 try:
-    #print("Loading Excel file...")
-    #print(f"Excel path: {EXCEL_PATH}")
+    print("Loading Excel file...")
+    print(f"Excel path: {EXCEL_PATH}")
     excel_df = get_excel_dataframe(parquet_path=EXCEL_PATH.with_suffix(".parquet"), excel_path=EXCEL_PATH, 
     sheet_name=SHEET_NAME, header_row=HEADER_ROW, removeCols=REMOVE_COLS, renameCols=RENAME_COLS, usecols=USECOLS,verbose=True)
 except Exception as e:

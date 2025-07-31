@@ -29,8 +29,8 @@ def rerank_chunks(client: ChatOpenAI) -> Callable[[AssistantState], AssistantSta
         indexed_chunks = [f"{i+1}. {text}" for i, text in enumerate(doc_texts)]
 
         rerank_prompt = f"""You are given a user query and a list of document chunks. Your job is to return the top 5 most relevant chunks.\nQuery:"{query}"\nChunks:{json.dumps(indexed_chunks, indent=2)}\nInstructions:\n
-            - Only return a JSON list of 5 integers, each representing the index (1-based) of the top 5 relevant chunks.
-            - Do not return any explanations or commentary. Just a JSON list like: [3, 1, 7, 2, 5]
+            - Only return a JSON list of 15 integers, each representing the index (1-based) of the top 15 relevant chunks.
+            - Do not return any explanations or commentary. Just a JSON list like: [3, 1, 7, 2, 5, ...]
         """
 
         result = client.invoke([
@@ -60,7 +60,7 @@ def rerank_chunks(client: ChatOpenAI) -> Callable[[AssistantState], AssistantSta
 def retrieve_pinecone(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
         query = state["messages"][-1]["content"] if state.get("messages") else ""
-        results = retrieve_docs(query, top_k=10).get("matches", [])
+        results = retrieve_docs(query, top_k=50).get("matches", [])
         if not results:
             state["retrieved_chunks"] = []
             state["source_paths"] = []
