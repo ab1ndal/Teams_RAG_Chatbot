@@ -1,7 +1,13 @@
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import ChatPage from "./routes/ChatPage";
+
 const App = () => {
   return (
-    <div>Hello World</div>
-  )
-}
+    <Routes>
+      <Route path="/" element={<ChatPage />} />
+    </Routes>
+  );
+};
 
-export default App
+export default App;
