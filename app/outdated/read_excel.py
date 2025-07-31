@@ -37,7 +37,7 @@ def execute_code(code, df, user_instruction):
     finally:
         sys.stdout = old_stdout  # Restore original stdout
 
-    print("=== Execution Output ===")
+    #print("=== Execution Output ===")
     prompt = f"""
     The user has provided the following instruction:
     {user_instruction}
@@ -58,7 +58,7 @@ def execute_code(code, df, user_instruction):
         temperature=0.3,
     )
     answer = response.choices[0].message.content.strip()
-    print(answer)
+    #print(answer)
 
 def generate_code(df: pd.DataFrame, metadata: json, user_instruction: str):
     sample_records = df.head(5).to_dict(orient="records")

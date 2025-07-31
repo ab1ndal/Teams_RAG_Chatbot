@@ -12,8 +12,8 @@ def match_rfis(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]
         for rfi in state["rfi_matches"]:
             folder_paths.append(rfi['Link'])
         state["rfi_folder_paths"] = folder_paths
-        print(state["rfi_matches"])
-        print(state["rfi_folder_paths"])
+        #print(state["rfi_matches"])
+        #print(state["rfi_folder_paths"])
         state["folder_contents"] = []
         return state
     return _node

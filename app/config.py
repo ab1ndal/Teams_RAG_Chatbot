@@ -94,3 +94,7 @@ JSON_DESCRIPTION = {
     "sample_value": "10/04/22: Just confirming prior INQ log (only items that had already been addressed) - need to review just to confirm.\n10/07/22: Took a quick review - this was only things that already had responses directly in the INQ log, so good to go, just noted no exceptions."
   }
 }
+
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
