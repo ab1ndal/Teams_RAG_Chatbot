@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -30,48 +29,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100 px-4">
-      <Card className="w-full max-w-md shadow-2xl rounded-2xl border border-orange-200">
-        <CardContent className="p-8 space-y-6">
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl font-semibold text-amber-700">
-              NYA Chatbot Login
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Use your email and password to sign in
-            </p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-100">
+      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 text-center space-y-6">
+        <h2 className="text-2xl font-semibold text-amber-700">
+          NYA Chatbot Login
+        </h2>
+        <p className="text-sm text-gray-500">
+          Use your email and password to sign in
+        </p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4 text-left">
             <Input
-              type="email"
-              placeholder="Email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="Enter your Email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-sm"
             />
             <Input
-              type="password"
-              placeholder="Password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                placeholder="Password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded text-sm"
             />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
+            <Button 
+                type="submit" 
+                className="w-full py-2 bg-amber-600 text-white rounded hover:bg-amber-700 transition disabled:opacity-50" 
+                disabled={loading}
+            >
+                {loading ? "Logging in..." : "Login with Email"}
             </Button>
-          </form>
+        </form>
 
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <a href="/forgot-password" className="hover:text-amber-700">
-              Forgot Password?
-            </a>
-            <a href="/signup" className="hover:text-amber-700">
-              Sign Up
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+        <p className="text-sm text-right">
+          <a href="/forgot-password" className="text-amber-600 underline">
+            Forgot Password?
+          </a>
+        </p>
+
+        <p className="text-sm text-gray-600 mt-2">
+          Don't have an account?{" "}
+          <a href="/signup" className="text-amber-600 underline">
+            Sign up
+          </a>
+        </p>
+      </div>
     </div>
   );
 }
