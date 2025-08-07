@@ -26,6 +26,14 @@ class RequestPayload(BaseModel):
     thread_id: str
     messages: List[Message]
 
+@app.get("/")
+def root():
+    return {"status": "Backend is running"}
+
+@app.get("/health")
+def health_check():
+    return {"ok": True}
+
 @app.post("/generate")
 async def generate_response(payload: RequestPayload):
     # Assemble state for LangGraph
