@@ -38,7 +38,6 @@ function ChatContent() {
 }
 
 export default function ChatPage() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [lastName, setLastName] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -50,7 +49,6 @@ export default function ChatPage() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        setUserEmail(user.email || null);
         const { data: userData } = await supabase
           .from("users")
           .select("*")

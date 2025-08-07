@@ -88,17 +88,11 @@ import {
       const userMessage = userMsg[0];
       setMessages((prev) => [...prev, userMessage]);
   
-      // 1. Fetch full thread context
-    const { data: contextMessages, error: fetchErr } = await supabase
-    .from("messages")
-    .select("role, content")
-    .eq("thread_id", selectedThread.id)
-    .order("created_at", { ascending: true });
-
-    if (fetchErr || !contextMessages) {
-    toast.error("Failed to fetch thread context");
-    return;
-    }
+    // 1. Fetch full thread context
+    const contextMessages = [
+    ...messages.map((m) => ({ role: m.role, content: m.content })),
+    { role: "user", content },
+    ];
 
     // 2. Call your FastAPI backend
     const response = await fetch("http://localhost:8000/generate", {
