@@ -5,41 +5,41 @@ A modern React/Next.js chatbot application with RAG (Retrieval-Augmented Generat
 ## Project Structure
 
 ```
-rag-chatbot/
+Teams_RAG_Chatbot/
 ├── app/                 # Python backend services
-│   ├── __init__.py     # Package initialization
-│   ├── clear_index.py  # Script to clear search indexes
-│   ├── config.py       # Configuration settings
+│   ├── config.py        # Configuration settings
 │   ├── document_loader.py  # Document processing utilities
-│   ├── graph/          # Graph-based processing framework
+│   ├── graph/           # Graph-based processing framework
 │   │   ├── __init__.py     # Package initialization
 │   │   ├── assistant.py    # Main assistant logic using LangGraph
-│   │   ├── state.py       # State management class (AssistantState)
-│   │   └── nodes/         # Processing nodes
-│   │       ├── classify.py # Query classification and intent detection
+│   │   ├── state.py        # State management class (AssistantState)
+│   │   └── nodes/          # Processing nodes
+│   │       ├── classify.py   # Query classification and intent detection
 │   │       ├── excel_insight.py # Excel code generation and execution
-│   │       ├── generate.py     # Answer generation
-│   │       ├── guardrails.py   # Security and validation rules
-│   │       ├── rag.py         # RAG implementation
-│   │       ├── respond.py     # Response formatting
-│   │       └── rfi_lookup.py  # RFI lookup and context combination
-│   ├── clients/           # API client implementations
+│   │       ├── generate.py   # Answer generation
+│   │       ├── guardrails.py # Security and validation rules
+│   │       ├── rag.py        # RAG implementation
+│   │       ├── respond.py    # Response formatting
+│   │       └── rfi_lookup.py # RFI lookup and context combination
+│   ├── clients/         # API client implementations
 │   │   └── openAI_client.py # OpenAI API client
-│   ├── services/         # Service implementations
-│   │   ├── embedding.py  # Text embedding generation
+│   ├── db/              # Database related code
+│   ├── models/          # Data models
+│   ├── routes/          # API route definitions
+│   ├── services/        # Service implementations
+│   │   ├── embedding.py   # Text embedding generation
 │   │   ├── excel_cache.py # Excel data caching
 │   │   └── pinecone_index.py # Vector store operations
-│   ├── smart_indexer.py  # Smart indexing implementation
-│   ├── utils.py         # Utility functions
-│   └── outdated/        # Legacy files (to be removed)
-│       ├── chat_engine.py  # Legacy chat processing
-│       ├── main.py        # Legacy FastAPI app
-│       └── read_excel.py  # Legacy Excel processing
-├── web-frontend/        # React/Next.js frontend
-│   ├── next-env.d.ts    # Next.js TypeScript configuration
-│   ├── next.config.ts   # Next.js configuration
-│   ├── package.json     # Frontend dependencies
-│   └── tsconfig.json    # TypeScript configuration
+│   └── utils.py         # Utility functions
+│
+├── Frontend/            # React/TypeScript frontend
+│   ├── public/          # Static assets
+│   └── src/             # Source code
+│       ├── components/  # Reusable UI components
+│       ├── context/     # React context providers
+│       ├── pages/       # Page components
+│       └── styles/      # Global styles
+└── tests/              # Test files
 ```
 
 ## Key Components
@@ -90,7 +90,6 @@ rag-chatbot/
    - Add document metadata management
    - Implement user-specific document access control
    - Add support for searching through RFIs.
-
 3. **Testing Improvements**:
 
    - Add more integration tests
@@ -107,8 +106,8 @@ rag-chatbot/
    - Implement error tracking
    - Add performance metrics
    - Create health check endpoints
-
 6. **Deployment**:
+
    - Create a front end for the chatbot
    - Deploy the backend
    - Deploy the frontend
@@ -141,6 +140,20 @@ Main dependencies include:
 
    ```bash
    .venv/Scripts/activate
+   uvicorn app.main:app --reload
+   ```
+5. In a new terminal, run the frontend:
+
+   ```bash
+   cd Frontend
+   npm install
+   npm run dev
+   ```
+
+## Testing
+1. Backend testing:
+
+   ```bash
    python tests/test_multi_input.py
    ```
 
