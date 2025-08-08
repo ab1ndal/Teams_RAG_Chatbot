@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import {Trash2} from "lucide-react"
 
 type Thread = {
   id: string;
@@ -75,21 +76,16 @@ export default function Sidebar({
   };
 
   const handleTitleChange = async (id: string, title: string) => {
-    console.log("handleTitleChange", id, title);
     const existing = threads.find((t) => t.id === id);
     if (!existing || existing.title === title) {
       setEditingId(null);
       return;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("threads")
       .update({ title })
-      .eq("id", id)
-      .select();
-
-    console.log("handleTitleChange", error);
-    console.log(data);
+      .eq("id", id);
 
     if (error) {
       toast.error("Failed to update title", { description: error.message });
@@ -99,6 +95,40 @@ export default function Sidebar({
       );
     }
     setEditingId(null);
+  };
+
+  const deleteThread = async (threadId: string) => {
+    //Confirm deletion
+    const confirmed = window.confirm("Are you sure you want to delete this conversation?");
+    if (!confirmed) return;
+
+    // Delete messages in the thread
+    const {error: messageDeleteError } = await supabase
+      .from("messages")
+      .delete()
+      .eq("thread_id", threadId);
+    if (messageDeleteError) {
+      toast.error("Failed to delete Thread", { description: messageDeleteError?.message || "Failed to delete thread" });
+      return;
+    }
+
+    // Delete thread
+    const {error: threadDeleteError } = await supabase
+      .from("threads")
+      .delete()
+      .eq("id", threadId);
+    
+    if (threadDeleteError) {
+      toast.error("Failed to delete thread", { description: threadDeleteError?.message || "Failed to delete thread" });
+      return;
+    }
+
+    setThreads((prev) => prev.filter((t) => t.id !== threadId));
+    toast.success("Conversation deleted successfully");
+
+    if (selectedThreadId === threadId) {
+      onSelect({id: "", title: null, created_at: ""});
+    }
   };
 
   return (
@@ -132,13 +162,26 @@ export default function Sidebar({
           ) : (
             <div
               key={thread.id}
-              onClick={() => onSelect(thread)}
-              onDoubleClick={() => setEditingId(thread.id)}
-              className={`cursor-pointer px-3 py-2 text-sm rounded hover:bg-muted ${
+              className={`group flex items-center justify-between cursor-pointer px-3 py-2 text-sm rounded hover:bg-muted ${
                 selectedThreadId === thread.id ? "bg-muted font-medium" : ""
               }`}
             >
-              {thread.title || "Untitled"}
+              <div
+                className="flex-1 truncate"
+                onClick={() => onSelect(thread)}
+                onDoubleClick={() => setEditingId(thread.id)}
+              >
+                {thread.title || "Untitled"}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent click from selecting the thread
+                  deleteThread(thread.id);
+                }}
+                className="ml-2 text-muted-foreground hover:text-red-600 p-1"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           )
         )}
