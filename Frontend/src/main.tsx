@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 
 import App from "./App.tsx";
 import "./index.css";
+import "highlight.js/styles/github.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
