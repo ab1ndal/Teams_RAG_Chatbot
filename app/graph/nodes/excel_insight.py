@@ -1,6 +1,6 @@
 # File: app/graph/nodes/excel_insight.py
 import sys
-import io
+import io, base64
 import re
 import json
 from typing import Callable, List, Literal
@@ -15,6 +15,19 @@ from io import BytesIO
 import asyncio
 import matplotlib.pyplot as plt
 import fuzzywuzzy
+import matplotlib
+matplotlib.use("Agg")
+
+def _capture_figures_to_data_urls():
+    images = []
+    for num in plt.get_fignums():
+        fig = plt.figure(num)
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches="tight")
+        plt.close(fig)
+        buf.seek(0)
+        images.append("data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8"))
+    return images
 
 
 def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantState], AssistantState]:
@@ -130,8 +143,15 @@ def extract_final_answer(text: str) -> str:
 
 def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
+        if state.get("executed"):
+            return state
+        state["executed"] = True
+
         code = state["code"]
         instruction = state["messages"][-1]["content"] if state.get("messages") else ""
+
+        # Clear the figure cache
+        plt.close('all')
 
         old_stdout = sys.stdout
         redirected_output = sys.stdout = io.StringIO()
@@ -146,6 +166,7 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
             sys.stdout = old_stdout
 
         state["output"] = output
+        state["plot_images"] = _capture_figures_to_data_urls()
 
         if state.get("query_class") == "rfi_lookup":
             data_str_clean = output.replace("Timestamp(", "").replace(")", "").replace("NaT", "None")

@@ -20,6 +20,7 @@ export default function ChatWindow() {
               role={msg.role}
               content={msg.content}
               createdAt={msg.created_at}
+              images={msg.images}
             />
           </div>
         ))}

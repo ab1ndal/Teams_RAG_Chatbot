@@ -13,6 +13,8 @@ class AssistantState(TypedDict, total=False):
     # Excel analysis
     code: str                       # Generated pandas code
     output: str                     # Output from code execution
+    plot_images: List[str]          # Base64 encoded plot images
+    executed: bool                  # Whether the code has been executed
 
     # RFI-specific path
     rfi_matches: List[dict]         # Matching rows from Excel

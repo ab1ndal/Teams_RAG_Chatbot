@@ -2,7 +2,7 @@
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Copy } from "lucide-react";
+import { Loader2, AlertTriangle, Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 
 type AnswerCardProps = {
@@ -11,6 +11,7 @@ type AnswerCardProps = {
   createdAt: string;
   isLoading?: boolean;
   isError?: boolean;
+  images?: string[];
 };
 
 export default function AnswerCard({
@@ -19,6 +20,7 @@ export default function AnswerCard({
   createdAt,
   isLoading = false,
   isError = false,
+  images,
 }: AnswerCardProps) {
   const time = new Date(createdAt).toLocaleTimeString();
 
@@ -78,6 +80,23 @@ export default function AnswerCard({
   };
 
   const { finalAnswer, analysis, code } = parseSections(content || "");
+
+  async function downloadImage(src: string, filename: string) {
+        try{
+        const response = await fetch(src);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        toast.error("Failed to download image");
+    }
+  }
 
   return (
     <div
@@ -147,6 +166,29 @@ export default function AnswerCard({
           <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{content}</ReactMarkdown>
         </div>
       )}
+
+    {images && images.length > 0 && (
+    <div className="mt-2 space-y-4">
+        {images.map((src, i) => (
+        <div key={i} className="flex flex-col items-start gap-1">
+            <img
+            src={src}
+            alt={`attachment ${i + 1}`}
+            className="rounded shadow max-w-full"
+            loading="lazy"
+            decoding="async"
+            />
+            <button
+            onClick={() => downloadImage(src, `plot-${i + 1}.png`)}
+            className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+            >
+            <Download size={12} />
+            Download
+            </button>
+        </div>
+        ))}
+        </div>
+    )}
     </div>
   );
 }

@@ -45,8 +45,15 @@ async def generate_response(payload: RequestPayload):
 
     try:
         result = assistant_graph.invoke(state)
-        final_answer = result.get("final_answer", "[No answer generated]")
-        return {"final_answer": final_answer}
+        return {
+            "final_answer": result.get("final_answer", "[No answer generated]"),
+            "analysis": result.get("analysis", "[No analysis generated]"),
+            "code": result.get("code", "[No code generated]"),
+            "plot_images": result.get("plot_images", [])
+        }
 
     except Exception as e:
-        return {"final_answer": "[Error in assistant graph]", "error": str(e)}
+        return {
+            "final_answer": "[Error in assistant graph]",
+            "error": str(e)
+        }

@@ -15,6 +15,7 @@ import {
     role: "user" | "assistant";
     content: string | null;
     created_at: string;
+    images?: string[];
   };
   
   type Thread = {
@@ -116,6 +117,7 @@ import {
 
     const result = await response.json();
     const aiResponse = result.final_answer ?? "[No response]";
+    const plotImages: string[] = result.plot_images ?? [];
 
     // 3. Insert assistant message
     const { data: aiMsg, error: aiErr } = await supabase
@@ -131,7 +133,11 @@ import {
     .select();
 
     if (!aiErr && aiMsg) {
-      setMessages((prev) => [...prev, aiMsg[0]]);
+      const enriched = {
+        ...aiMsg[0],
+        images: plotImages,
+      }
+      setMessages((prev) => [...prev, enriched]);
     } else {
       setIsError(true);
       toast.error("Failed to get AI response");
