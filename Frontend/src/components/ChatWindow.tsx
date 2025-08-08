@@ -16,6 +16,7 @@ export default function ChatWindow() {
         messages.map((msg) => (
           <div key={msg.id} className="mb-4">
             <AnswerCard
+              key={msg.id}
               role={msg.role}
               content={msg.content}
               createdAt={msg.created_at}
