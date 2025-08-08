@@ -28,6 +28,8 @@ import {
     setSelectedThread: (thread: Thread | null) => void;
     messages: Message[];
     sendMessage: (content: string) => Promise<void>;
+    isLoading: boolean;
+    isError: boolean;
   };
   
   const ChatContext = createContext<ChatContextType | null>(null);
@@ -41,7 +43,9 @@ import {
   export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-  
+    const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
+
     useEffect(() => {
       const fetchMessages = async () => {
         if (!selectedThread) return;
@@ -94,15 +98,20 @@ import {
     { role: "user", content },
     ];
 
+    // Set loading state
+    setIsLoading(true);
+    setIsError(false);
+
     // 2. Call your FastAPI backend
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-    user_id: user?.id,
-    thread_id: selectedThread.id,
-    messages: contextMessages,
-    }),
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+      user_id: user?.id,
+      thread_id: selectedThread.id,
+      messages: contextMessages,
+      }),
     });
 
     const result = await response.json();
@@ -122,9 +131,17 @@ import {
     .select();
 
     if (!aiErr && aiMsg) {
-    setMessages((prev) => [...prev, aiMsg[0]]);
+      setMessages((prev) => [...prev, aiMsg[0]]);
     } else {
-    toast.error("Failed to get AI response");
+      setIsError(true);
+      toast.error("Failed to get AI response");
+    }
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      setIsError(true);
+      toast.error("Failed to get AI response");
+    } finally {
+      setIsLoading(false);
     }
     };
   
@@ -135,6 +152,8 @@ import {
           setSelectedThread,
           messages,
           sendMessage,
+          isLoading,
+          isError,
         }}
       >
         {children}

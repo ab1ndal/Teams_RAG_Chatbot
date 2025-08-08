@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import AnswerCard from "@/components/AnswerCard";
 
 export default function ChatWindow() {
-  const { messages } = useChat();
+  const { messages, isLoading, isError } = useChat();
 
   return (
     <ScrollArea className="flex-1 flex flex-col gap-4 pr-2">
@@ -13,16 +13,37 @@ export default function ChatWindow() {
           This thread is empty. Start the conversation below ⤵️
         </div>
       ) : (
-        messages.map((msg) => (
+        <>
+        {messages.map((msg) => (
           <div key={msg.id} className="mb-4">
             <AnswerCard
-              key={msg.id}
               role={msg.role}
               content={msg.content}
               createdAt={msg.created_at}
             />
           </div>
-        ))
+        ))}
+        {isLoading && (
+            <div className="mb-4">
+              <AnswerCard
+                role="assistant"
+                content=""
+                createdAt={new Date().toISOString()}
+                isLoading
+              />
+            </div>
+          )}
+          {isError && (
+            <div className="mb-4">
+              <AnswerCard
+                role="system"
+                content=""
+                createdAt={new Date().toISOString()}
+                isError
+              />
+            </div>
+          )}
+        </>
       )}
     </ScrollArea>
   );
