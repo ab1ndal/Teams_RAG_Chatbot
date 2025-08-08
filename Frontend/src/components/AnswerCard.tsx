@@ -1,6 +1,4 @@
 // src/components/AnswerCard.tsx
-// src/components/AnswerCard.tsx
-import React from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import { Badge } from "@/components/ui/badge";
