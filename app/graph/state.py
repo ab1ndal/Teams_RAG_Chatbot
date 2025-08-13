@@ -7,8 +7,9 @@ class AssistantState(TypedDict, total=False):
     user_id: str                    # Authenticated user
     messages: List[ChatCompletionMessage]   # Original user messages
     thread_id: str                  # Thread/session ID
-    query_class: str               # 'excel_insight' | 'general' | 'rfi_lookup'
+    query_class: str                # 'excel_insight' | 'general' | 'rfi_lookup'
     query_subclass: Optional[str]   # 'needs_llm' | 'no_llm'
+    history: str                    # compact running conversation history
 
     # Excel analysis
     code: str                       # Generated pandas code

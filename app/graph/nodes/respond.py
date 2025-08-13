@@ -5,6 +5,7 @@ from typing import Callable
 # This node is responsible for formatting the final output for the user
 
 def respond(state: AssistantState) -> AssistantState:
+    print("Responding...")
     if "error" in state:
         state["final_answer"] = state["error"]
     elif "final_answer" not in state:

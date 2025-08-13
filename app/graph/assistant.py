@@ -62,13 +62,17 @@ builder.add_node("rerank_chunks", rerank_chunks_node)
 builder.set_entry_point("check_query")
 builder.add_conditional_edges("check_query", lambda state: "error" in state,{
         True: "respond",
-        False: "classify_query"
+        False: "rewrite_query"
     }
 )
+
+builder.add_edge("rewrite_query", "classify_query")
+
 builder.add_conditional_edges("classify_query", lambda state: state["query_class"], {
     "excel_insight": "generate_code",
     "rfi_lookup": "generate_code",
-    "general": "rewrite_query"
+    "building_code_query": "retrieve_pinecone",
+    "general": "retrieve_pinecone"
 })
 
 builder.add_conditional_edges("retrieve_pinecone", lambda state: "error" in state,{
@@ -89,7 +93,6 @@ builder.add_edge("match_rfis", "rfi_combine_context")
 builder.add_edge("rfi_combine_context", "generate_answer")
 
 # General Path
-builder.add_edge("rewrite_query", "retrieve_pinecone")
 builder.add_edge("rerank_chunks", "generate_answer")
 
 builder.add_edge("generate_answer", "respond")

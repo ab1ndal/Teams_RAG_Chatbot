@@ -6,9 +6,9 @@ from app.graph.state import AssistantState
 from app.config import JSON_DESCRIPTION
 
 class QueryClassification(BaseModel):
-    query_class: Literal["excel_insight", "rfi_lookup", "general"] = Field(
+    query_class: Literal["excel_insight", "rfi_lookup", "building_code_query", "general"] = Field(
         ..., 
-        description="Classify if the message requires analytics on Excel files, wants information on the contents of specific RFIs, or is a general question"
+        description="Classify if the message requires analytics on Excel, RFI lookup, building code query or is a general question"
     )
     query_subclass: Optional[Literal["needs_llm", "no_llm"]] = Field(
         "needs_llm",
@@ -19,6 +19,7 @@ def classify_query(client: ChatOpenAI):
     structured_llm = client.with_structured_output(QueryClassification)
 
     def _node(state: AssistantState):
+        print("Classifying query...")
         last_message = state["messages"][-1] if state.get("messages") else {"content": ""}
         system_prompt = f"""
         You are a router for an assistant that classifies user queries into two levels:
@@ -36,7 +37,11 @@ def classify_query(client: ChatOpenAI):
             2. **rfi_lookup**: Queries that require accessing or quoting the full document content of a specific RFI, or locating its original folder or file.
             - This includes questions about what a document “says” or requests to "open", "find", or "read" a particular RFI file
 
-            3. **general**: Any other query unrelated to structured RFI logs or document lookup. These may include questions about company history, projects, scheduling, people, or unrelated topics.
+            3. **building_code_query**: Queries about AEC codes/standards (e.g., ACI 318, ASCE 7, AWS D1.1, AISC 360/341, NDS, TMS 402/602, IBC/IEBC/ASCE 41, etc.). 
+            Heuristics: mentions of "per code", "per ASCE 7-22 §12.8…", "ACI 318-19 Table…", "AWS D1.1 Clause…", "phi, omega, R, C_d", "Sds/S1", load combinations, base shear, UT/RT/MT/VT, CJP/PJP, detailing limits,
+            wind/snow/seismic drifts/anchors/diaphragms/collectors, material-specific design criteria (concrete/steel/wood/masonry).
+
+            4. **general**: Any other query unrelated to structured RFI logs or document lookup. These may include questions about company history, projects, scheduling, people, or unrelated topics.
         
         B. **query_subclass** — only applicable if query_class is "excel_insight":
             1. "needs_llm": Use this if the query requires semantic understanding, classification, interpretation of comments, extraction of structured meaning from free text, or complex logic that can't be done by filtering/grouping alone.

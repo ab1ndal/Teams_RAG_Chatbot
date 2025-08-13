@@ -3,24 +3,45 @@ from typing import Callable
 from app.graph.state import AssistantState
 from langchain_openai import ChatOpenAI
 from app.services.pinecone_index import retrieve_docs
+from app.utils import helper
 import json
 import re
 
 def rewrite_query(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
+        print("Rewriting query...")
         user_query = state["messages"][-1]["content"] if state.get("messages") else ""
-        prompt = f"Rewrite this query to make it more precise and suitable for document retrieval: {user_query}. DO NOT replace any acronyms."
+        
+        general_suffix = f"""----------------
+            Current Summary (may be "(none)"):
+            {state.get('history', '(none)')}
+            Recent turns:
+            {helper.render_message_summary(state['messages'], window_size=3)}
+            ----------------
+            Original query: {user_query}
+            ----------------
+            Output the rewritten query only.
+            """
+
+        system_msg = "You rewrite queries to make them more precise and suitable for document retrieval. Return ONLY the rewritten query—no preface or commentary."
+        user_msg = f"""Rewrite the user query to make it more precise and suitable for document retrieval. DO NOT replace any acronyms.
+        {general_suffix}
+        """
+        
         rewritten = client.invoke([
-            {"role": "system", "content": "You are a helpful assistant that rewrites vague or imprecise queries into concise, focused ones for knowledge retrieval."},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": system_msg},
+            {"role": "user", "content": user_msg}
         ])
-        state["messages"][-1]["content"] = rewritten.content.strip()
+        rewritten_query = rewritten.content.strip()
+        print(rewritten_query)
+        state["messages"][-1]["content"] = rewritten_query
         return state
     return _node
 
 
 def rerank_chunks(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
+        print("Reranking chunks...")
         query = state["messages"][-1]["content"] if state.get("messages") else ""
         docs = state.get("retrieved_chunks", [])
 
@@ -59,6 +80,7 @@ def rerank_chunks(client: ChatOpenAI) -> Callable[[AssistantState], AssistantSta
 
 def retrieve_pinecone(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
+        print("Retrieving documents...")
         query = state["messages"][-1]["content"] if state.get("messages") else ""
         results = retrieve_docs(query, top_k=50).get("matches", [])
         if not results:

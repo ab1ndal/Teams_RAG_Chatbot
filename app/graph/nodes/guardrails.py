@@ -101,6 +101,10 @@ def is_query_allowed(query: str, client: ChatOpenAI) -> bool:
 
 # === LangGraph Node ===
 def check_query(state: AssistantState) -> AssistantState:
+    """
+    Checks if the query is allowed based on guardrails.
+    """
+    print("Checking query for guardrails...")
     from app.clients.openAI_client import get_client
     client = get_client(temperature=0)
     query = state["messages"][-1]["content"] if state.get("messages") else ""
