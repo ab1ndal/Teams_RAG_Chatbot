@@ -56,12 +56,37 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
             )
 
             user_msg = f"""
-            Answer the user, update the thread preview (summary of the latest message and the recent turns in 5 words or less), AND update a compact running summary (<=300 words), focus on decisions, assumptions, sources, constraints, and any unresolved issues.
+            Answer the user, update the thread_preview, AND update a compact running summary (<=300 words), focus on decisions, assumptions, sources, constraints, and any unresolved issues.
 
             Guidelines for the "answer" field:
             - The "answer" must be supported by the context only. If the answer is not fully supported by the context, say exactly: 'Not found in provided sources.'
             - Every substantive sentence MUST include an inline reference like [1], [2], etc.
             - End with a 'Sources:' list that matches the inline indices.
+
+            Guidelines for the "thread_preview" field:
+            - Derive ONLY from the "Recent turns" section (max last 5 turns) and "Current Summary" section. Ignore "User Question", "Retrieved Context", and "Sources" when composing the preview.
+            - Capture the core topic or action of the ongoing thread, not a verbatim quote of the last message.
+            - If the latest user turn is trivial (e.g., "ok", "continue", "thanks"), skip it and look back to the most recent contentful turn.
+            - Length: upto 5 words, plain text. No punctuation, quotes, emojis, hashtags, brackets, or citations.
+            - Use high-signal keywords; acronyms and numbers are allowed (e.g., ASCE 7-22, RFI #12).
+            - Neutral, descriptive style; avoid names and personal details unless essential to the topic.
+            - Do not invent facts; the preview must be supported by "Recent turns".
+            - If no substantive content exists, return: New chat
+            Bad examples: "continue", last question
+            Good examples: "ASCE 7 Base Shear", "Questions about TEF 2023"
+
+            Guidelines for the "updated_summary" field:
+            - Purpose: a running, persistent summary of the thread. Start from "Current Summary", then incorporate only the new information from "User Question" and generated response.
+            - Do NOT re-summarize only the latest message. Preserve prior facts unless they are explicitly contradicted.
+            - If new info conflicts with prior info, keep both and note the conflict under Open issues.
+            - Keep <= 300 words. Be concise and factual; no fluff. Do not invent details.
+            - Structure it with these labeled bullets (only include bullets that have content):
+                • Decisions: concrete choices made this thread.
+                • Assumptions: working assumptions or interpretations.
+                • Constraints: limits, requirements, or data gaps.
+                • Open issues / Next steps: unresolved questions, follow-ups, or actions.
+            - Avoid copying sentences verbatim from the last answer; summarize at a higher level.
+
             ----
             Current Summary (may be "(none)"):
             {state.get('history', '(none)')}
@@ -80,6 +105,8 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
             """
 
             try:
+                print("Input Summary")
+                print(state.get('history', '(none)'))
                 response: ResponsePayload = structured.invoke([
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": user_msg}
@@ -104,3 +131,4 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
                     state["error"] = f"❌ Failed to parse JSON: {e}"
             return state
     return _node
+

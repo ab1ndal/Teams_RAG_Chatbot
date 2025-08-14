@@ -9,6 +9,7 @@ import {Trash2} from "lucide-react"
 type Thread = {
   id: string;
   title: string | null;
+  thread_preview?: string | null;
   created_at: string;
 };
 
@@ -58,12 +59,14 @@ export default function Sidebar({
       id: newId,
       title: "New Chat",
       created_at: new Date().toISOString(),
+      thread_preview: null,
     };
 
     const { error } = await supabase.from("threads").insert({
       id: newId,
       user_id: userId,
       title: newThread.title,
+      thread_preview: newThread.thread_preview,
     });
 
     if (error) {
@@ -167,11 +170,18 @@ export default function Sidebar({
               }`}
             >
               <div
-                className="flex-1 truncate"
+                className="flex-1 min-w-0"
                 onClick={() => onSelect(thread)}
                 onDoubleClick={() => setEditingId(thread.id)}
               >
-                {thread.title || "Untitled"}
+                <div className="truncate">
+                  {thread.title || "Untitled"}
+                </div>
+                {thread.thread_preview ? (
+                  <div className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                    {thread.thread_preview}
+                  </div>
+                ) : null}
               </div>
               <button
                 onClick={(e) => {
