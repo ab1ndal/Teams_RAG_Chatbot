@@ -10,6 +10,7 @@ import re
 class ResponsePayload(BaseModel):
     answer: str = Field(..., description="Final answer text with inline refs like [1], [2], etc., and a Sources list at the end.")
     updated_summary: str = Field(..., description="Compact running summary (<=300 words)")
+    thread_preview: str = Field(..., description="Compact running conversation history (5 words)")
 
 def _strip_code_fences(text: str) -> str:
     t = text.strip()
@@ -42,7 +43,8 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
 
             sources = "\n".join(f"[{i+1}] {path}" for i, path in enumerate(unique_sources))
             context = "\n\n".join(context_blocks)
-            print('History:', state.get('history', '(none)'))
+
+            recent_history = helper.render_message_summary(state.get('messages', []), window_size=5)
 
             system_msg = (
             "You answer STRICTLY using the provided context only. "
@@ -50,11 +52,11 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
             "'Not found in provided sources.' "
             "Every substantive sentence MUST include an inline reference like [1], [2], etc. "
             "End with a 'Sources:' list that matches the inline indices. "
-            "Return ONLY the schema fields (answer, updated_summary)."
+            "Return ONLY the schema fields (answer, updated_summary, thread_preview)."
             )
 
             user_msg = f"""
-            Answer the user AND update a compact running summary (<=300 words), focus on decisions, assumptions, sources, constraints, and any unresolved issues.
+            Answer the user, update the thread preview (summary of the latest message and the recent turns in 5 words or less), AND update a compact running summary (<=300 words), focus on decisions, assumptions, sources, constraints, and any unresolved issues.
 
             Guidelines for the "answer" field:
             - The "answer" must be supported by the context only. If the answer is not fully supported by the context, say exactly: 'Not found in provided sources.'
@@ -65,7 +67,7 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
             {state.get('history', '(none)')}
 
             Recent turns:
-            {helper.render_message_summary(state.get('messages', []), window_size=5)}
+            {recent_history}
 
             Retreived Context:
             {context}
@@ -74,7 +76,7 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
             {sources}
 
             User Question: 
-            {state.get('messages', [])[-1]['content']}
+            {state.get('rewritten_query', "")}
             """
 
             try:
@@ -84,6 +86,7 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
                 ])
                 state["history"] = response.updated_summary
                 state["final_answer"] = response.answer
+                state["thread_preview"] = response.thread_preview
                 return state
             except ValidationError as e:
                 # Extremely rare: try one cheap repair pass on raw content
@@ -96,6 +99,7 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
                     data = json.loads(raw)
                     state["history"] = data["updated_summary"]
                     state["final_answer"] = data["answer"]
+                    state["thread_preview"] = data["thread_preview"]
                 except Exception as e:
                     state["error"] = f"❌ Failed to parse JSON: {e}"
             return state

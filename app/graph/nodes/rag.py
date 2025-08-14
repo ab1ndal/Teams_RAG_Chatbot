@@ -10,7 +10,7 @@ import re
 def rewrite_query(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
         print("Rewriting query...")
-        user_query = state["messages"][-1]["content"] if state.get("messages") else ""
+        user_query = helper._last_user_text(state["messages"])
         
         general_suffix = f"""----------------
             Current Summary (may be "(none)"):
@@ -34,7 +34,7 @@ def rewrite_query(client: ChatOpenAI) -> Callable[[AssistantState], AssistantSta
         ])
         rewritten_query = rewritten.content.strip()
         print(rewritten_query)
-        state["messages"][-1]["content"] = rewritten_query
+        state["rewritten_query"] = rewritten_query
         return state
     return _node
 
@@ -42,7 +42,7 @@ def rewrite_query(client: ChatOpenAI) -> Callable[[AssistantState], AssistantSta
 def rerank_chunks(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
         print("Reranking chunks...")
-        query = state["messages"][-1]["content"] if state.get("messages") else ""
+        query = state.get("rewritten_query", [])
         docs = state.get("retrieved_chunks", [])
 
         # Prepare input as numbered snippet list for ranking
@@ -81,8 +81,8 @@ def rerank_chunks(client: ChatOpenAI) -> Callable[[AssistantState], AssistantSta
 def retrieve_pinecone(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
         print("Retrieving documents...")
-        query = state["messages"][-1]["content"] if state.get("messages") else ""
-        results = retrieve_docs(query, top_k=50).get("matches", [])
+        query = state.get("rewritten_query", [])
+        results = retrieve_docs(query, top_k=15).get("matches", [])
         if not results:
             state["retrieved_chunks"] = []
             state["source_paths"] = []

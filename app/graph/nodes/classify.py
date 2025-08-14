@@ -20,7 +20,8 @@ def classify_query(client: ChatOpenAI):
 
     def _node(state: AssistantState):
         print("Classifying query...")
-        last_message = state["messages"][-1] if state.get("messages") else {"content": ""}
+        last_message = state.get("rewritten_query", "")
+
         system_prompt = f"""
         You are a router for an assistant that classifies user queries into two levels:
         A. **query_class**: Primary category of the query
@@ -60,8 +61,9 @@ def classify_query(client: ChatOpenAI):
         """
         response = structured_llm.invoke([
                 {"role": "system", "content": system_prompt.strip()},
-                {"role": "user", "content": last_message["content"]}
+                {"role": "user", "content": last_message}
         ])
+
         state["query_class"] = response.query_class
         state["query_subclass"] = response.query_subclass
         return state

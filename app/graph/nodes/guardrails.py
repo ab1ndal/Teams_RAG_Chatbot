@@ -7,6 +7,7 @@ from app.graph.state import AssistantState
 from pydantic import BaseModel, Field
 from openai import OpenAI
 from app.config import OPENAI_API_KEY
+from app.utils.helper import _last_user_text
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +107,8 @@ def check_query(state: AssistantState) -> AssistantState:
     """
     print("Checking query for guardrails...")
     from app.clients.openAI_client import get_client
-    client = get_client(temperature=0)
-    query = state["messages"][-1]["content"] if state.get("messages") else ""
+    client = get_client(model="gpt-4o-mini", temperature=0)
+    query = _last_user_text(state["messages"])
     if not is_query_allowed(query, client):
         state["error"] = "🚫 This query is restricted or violates assistant usage policy."
     return state

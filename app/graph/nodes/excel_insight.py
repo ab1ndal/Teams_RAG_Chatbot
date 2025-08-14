@@ -35,7 +35,8 @@ def generate_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSt
     metadata = JSON_DESCRIPTION
 
     def _node(state: AssistantState) -> AssistantState:
-        instruction = state["messages"][-1]["content"] if state.get("messages") else ""
+        instruction = state.get("rewritten_query", "")
+        print("Generating code...")
 
         if state.get("query_class") == "rfi_lookup":
             instruction += """
@@ -143,12 +144,13 @@ def extract_final_answer(text: str) -> str:
 
 def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantState], AssistantState]:
     def _node(state: AssistantState) -> AssistantState:
+        print("Executing code...")
         if state.get("executed"):
             return state
         state["executed"] = True
 
         code = state["code"]
-        instruction = state["messages"][-1]["content"] if state.get("messages") else ""
+        instruction = state.get("rewritten_query", "")
 
         # Clear the figure cache
         plt.close('all')
@@ -186,15 +188,15 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
 
             Return only the following, exactly as formatted:
 
-            === CODE ===
-            <the code that was executed>
-
             === FINAL ANSWER ===
             <clean and readable output from the code, shown as a plain table or list>
 
             === ANALYSIS ===
             <brief explanation of the method used>
             <brief insights, issues, assumptions, or observations>
+
+            === CODE ===
+            <the code that was executed>
 
             Guidelines:
             - DO NOT return markdown or bullets.
@@ -204,14 +206,15 @@ def execute_code(client: ChatOpenAI, df: pd.DataFrame) -> Callable[[AssistantSta
             - Return only the FINAL ANSWER, ANALYSIS, and CODE sections — nothing else.
         
             Example:
-            === CODE ===
-            print("hello")
 
             === FINAL ANSWER ===
             hello
 
             === ANALYSIS ===
             This code prints a greeting. No input/output issues expected.
+
+            === CODE ===
+            print("hello")
         """
 
         summary = client.invoke([

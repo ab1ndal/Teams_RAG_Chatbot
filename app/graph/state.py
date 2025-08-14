@@ -1,15 +1,18 @@
 # app/graph/state.py
 
-from typing import TypedDict, Optional, List, Any
+from typing import TypedDict, Optional, List, Annotated
 from openai.types.chat import ChatCompletionMessage
+from langgraph.graph.message import add_messages
 
 class AssistantState(TypedDict, total=False):
     user_id: str                    # Authenticated user
-    messages: List[ChatCompletionMessage]   # Original user messages
+    messages: Annotated[List[ChatCompletionMessage], add_messages]   # Original user messages
     thread_id: str                  # Thread/session ID
-    query_class: str                # 'excel_insight' | 'general' | 'rfi_lookup'
+    query_class: str                # 'excel_insight' | 'general' | 'rfi_lookup' | 'building_code_query'
     query_subclass: Optional[str]   # 'needs_llm' | 'no_llm'
     history: str                    # compact running conversation history
+    thread_preview: str             # compact running conversation history (5 words)
+    rewritten_query: Optional[str]  # Rewritten vague query
 
     # Excel analysis
     code: str                       # Generated pandas code

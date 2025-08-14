@@ -68,16 +68,27 @@ export default function AnswerCard({
   }
 
   const parseSections = (text: string) => {
-    const finalAnswerMatch = text.match(/=== FINAL ANSWER ===\s*([\s\S]*?)(?===|$)/);
-    const analysisMatch = text.match(/=== ANALYSIS ===\s*([\s\S]*?)(?===|$)/);
-    const codeMatch = text.match(/=== CODE ===\s*([\s\S]*?)(?===|$)/);
-
-    return {
-      finalAnswer: finalAnswerMatch?.[1]?.trim() || null,
-      analysis: analysisMatch?.[1]?.trim() || null,
-      code: codeMatch?.[1]?.trim() || null,
+    const result: { finalAnswer: string | null; analysis: string | null; code: string | null } = {
+      finalAnswer: null,
+      analysis: null,
+      code: null,
     };
-  };
+  
+    // Stop at the next header OR true end-of-string
+    const re =
+    /^\s*=== (FINAL ANSWER|ANALYSIS|CODE) ===\s*([\s\S]*?)(?=^\s*=== (?:FINAL ANSWER|ANALYSIS|CODE) ===\s*|(?![\s\S]))/gm;
+
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const section = m[1];
+      const body = m[2].trim();
+      if (section === "FINAL ANSWER") result.finalAnswer = body;
+      else if (section === "ANALYSIS") result.analysis = body;
+      else if (section === "CODE") result.code = body;
+    }
+  
+    return result;
+  };  
 
   const { finalAnswer, analysis, code } = parseSections(content || "");
 

@@ -24,9 +24,9 @@ except Exception as e:
     print(f"Failed to load Excel file: {e}")
     exit(1)
 
-classify_llm_client = get_client(temperature=0)
-base_llm_client = get_client(temperature=0.7)
-codegen_llm_client = get_client(temperature=0.3)
+classify_llm_client = get_client(model="gpt-4o-mini",temperature=0.2)
+base_llm_client = get_client(model="gpt-4o",temperature=0.7)
+codegen_llm_client = get_client(model="gpt-4o",temperature=0.3)
 fast_classifier = get_client(model="gpt-4o-mini", temperature=0)
 
 # Bind Excel nodes with LLM and df
@@ -38,7 +38,7 @@ rfi_combine_context_node = rfi_combine_context(codegen_llm_client)
 # Bind LLM client
 classify_node = classify_query(classify_llm_client)
 rerank_chunks_node = rerank_chunks(codegen_llm_client)
-rewrite_query_node = rewrite_query(codegen_llm_client)
+rewrite_query_node = rewrite_query(classify_llm_client)
 generate_answer_node = generate_answer(codegen_llm_client)
 retrieve_pinecone_node = retrieve_pinecone(codegen_llm_client)
 
