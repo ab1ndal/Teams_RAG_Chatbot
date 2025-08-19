@@ -11,28 +11,33 @@ function ChatContent() {
   const { selectedThread, setSelectedThread } = useChat();
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-1/4 bg-muted border-r overflow-y-auto p-4">
+    <div className="h-full grid grid-cols-[1fr,3fr] overflow-hidden">
+      {/* Sidebar column: let Sidebar manage its own scroll */}
+      <aside className="min-h-0 overflow-y-auto border-r bg-muted/20 p-4">
         <Sidebar
           onSelect={(thread) => setSelectedThread(thread)}
           selectedThreadId={selectedThread?.id || null}
         />
-      </div>
+      </aside>
 
-      {/* Chat area */}
-      <div className="w-3/4 p-6 flex flex-col overflow-hidden">
+      {/* Chat column */}
+      <main className="min-h-0 flex flex-col p-6">
         {selectedThread ? (
           <>
-            <ChatWindow />
-            <MessageInput />
+            {/* Messages area: the ONLY scroll on the right */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ChatWindow />
+            </div>
+
+            {/* Input bar: outside the scroll, always visible */}
+            <div className="border-t pt-3 bg-background">
+              <MessageInput />
+            </div>
           </>
         ) : (
-          <div className="text-gray-500 text-sm">
-            Select a thread to start chatting
-          </div>
+          <div className="text-gray-500 text-sm">Select a thread to start chatting</div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
@@ -71,7 +76,7 @@ export default function ChatPage() {
 
   return (
     <ChatProvider>
-      <div className="min-h-screen flex flex-col">
+      <div className="h-screen flex flex-col">
         {/* Top menu bar */}
         <div className="flex items-center justify-between bg-amber-600 text-white px-6 py-3 shadow">
           <div className="text-lg font-semibold">NYA Chatbot</div>
@@ -89,8 +94,10 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Main content */}
-        <ChatContent />
+        {/* Main content must consume remaining height */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ChatContent />
+        </div>
       </div>
     </ChatProvider>
   );

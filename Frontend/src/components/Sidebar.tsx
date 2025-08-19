@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import {Trash2} from "lucide-react"
+import {Trash2} from "lucide-react";
+import ConfirmButton from "@/components/ConfirmButton";
 
 type Thread = {
   id: string;
@@ -23,6 +24,7 @@ export default function Sidebar({
   const [threads, setThreads] = useState<Thread[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchThreads = async () => {
@@ -46,6 +48,10 @@ export default function Sidebar({
       }
 
       setThreads(data);
+      // ensure sidebar starts at the very top
+      requestAnimationFrame(() => {
+        if (listRef.current) listRef.current.scrollTop = 0;
+      });
     };
 
     fetchThreads();
@@ -102,8 +108,8 @@ export default function Sidebar({
 
   const deleteThread = async (threadId: string) => {
     //Confirm deletion
-    const confirmed = window.confirm("Are you sure you want to delete this conversation?");
-    if (!confirmed) return;
+    //const confirmed = window.confirm("Are you sure you want to delete this conversation?");
+    //if (!confirmed) return;
 
     // Delete messages in the thread
     const {error: messageDeleteError } = await supabase
@@ -146,55 +152,65 @@ export default function Sidebar({
           + New
         </Button>
       </div>
-
-      <div className="space-y-2 overflow-y-auto flex-1 pr-2">
-        {threads.map((thread) =>
-          editingId === thread.id ? (
-            <Input
-              key={thread.id}
-              autoFocus
-              className="text-sm"
-              defaultValue={thread.title ?? ""}
-              onBlur={(e) => handleTitleChange(thread.id, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-            />
-          ) : (
-            <div
-              key={thread.id}
-              className={`group flex items-center justify-between cursor-pointer px-3 py-2 text-sm rounded hover:bg-muted ${
-                selectedThreadId === thread.id ? "bg-muted font-medium" : ""
-              }`}
-            >
-              <div
-                className="flex-1 min-w-0"
-                onClick={() => onSelect(thread)}
-                onDoubleClick={() => setEditingId(thread.id)}
-              >
-                <div className="truncate">
-                  {thread.title || "Untitled"}
-                </div>
-                {thread.thread_preview ? (
-                  <div className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                    {thread.thread_preview}
-                  </div>
-                ) : null}
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent click from selecting the thread
-                  deleteThread(thread.id);
+      <div ref={listRef} className="space-y-2 overflow-y-auto flex-1 pr-2">
+        <div className="space-y-2 overflow-y-auto flex-1 pr-2">
+          {threads.map((thread) =>
+            editingId === thread.id ? (
+              <Input
+                key={thread.id}
+                autoFocus
+                className="text-sm"
+                defaultValue={thread.title ?? ""}
+                onBlur={(e) => handleTitleChange(thread.id, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    (e.target as HTMLInputElement).blur();
+                  }
                 }}
-                className="ml-2 text-muted-foreground hover:text-red-600 p-1"
+              />
+            ) : (
+              <div
+                key={thread.id}
+                className={`group flex items-center justify-between cursor-pointer px-3 py-2 text-sm rounded hover:bg-muted ${
+                  selectedThreadId === thread.id ? "bg-muted font-medium" : ""
+                }`}
               >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          )
-        )}
+                <div
+                  className="flex-1 min-w-0"
+                  onClick={() => onSelect(thread)}
+                  onDoubleClick={() => setEditingId(thread.id)}
+                >
+                  <div className="truncate">
+                    {thread.title || "Untitled"}
+                  </div>
+                  {thread.thread_preview ? (
+                    <div className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                      {thread.thread_preview}
+                    </div>
+                  ) : null}
+                </div>
+                <ConfirmButton
+                  title="Delete this conversation?"
+                  description={`“${thread.title || "Untitled"}” and all its messages will be permanently deleted. This action cannot be undone.`}
+                  confirmLabel="Delete"
+                  destructive
+                  onConfirm={async () => {
+                    // stop selecting the thread after deletion if it's the active one
+                    await deleteThread(thread.id);
+                  }}
+                >
+                  <button
+                    onClick={(e) => e.stopPropagation()} // keep row click from firing
+                    className="ml-2 text-muted-foreground hover:text-red-600 p-1"
+                    aria-label="Delete conversation"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </ConfirmButton>
+              </div>
+            )
+          )}
+        </div>
       </div>
     </div>
   );
