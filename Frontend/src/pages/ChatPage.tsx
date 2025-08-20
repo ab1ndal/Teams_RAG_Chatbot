@@ -86,7 +86,7 @@ export default function ChatPage() {
             </span>
             <Button
               variant="outline"
-              className="text-white border-white hover:bg-white hover:text-amber-600 transition"
+              className="text-amber-600 border-white hover:bg-white hover:text-red-600 transition"
               onClick={handleLogout}
             >
               Logout
