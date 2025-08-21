@@ -13,6 +13,7 @@ class AssistantState(TypedDict, total=False):
     history: str                    # compact running conversation history
     thread_preview: str             # compact running conversation history (5 words)
     rewritten_query: Optional[str]  # Rewritten vague query
+    previous_rewrites: Optional[str] # Previous rewritten queries (if any)
 
     # Excel analysis
     code: str                       # Generated pandas code

@@ -48,6 +48,15 @@ STEP_LABELS: Dict[str, str] = {
 def ndjson(event_type: str, data: Dict[str, Any]) -> str:
     return json.dumps({"type": event_type, "data": data}) + "\n"
 
+def normalize_rewrites(raw):
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, str):
+        cleaned = raw.strip("[]")
+        items = cleaned.split("][")
+        return [item.strip("'\"") for item in items if item.strip()]
+    return []
+
 @app.post("/generate-stream")
 async def generate_stream(payload: RequestPayload):
     try:
@@ -153,7 +162,7 @@ async def generate_response(payload: RequestPayload):
         # Get prior summary
         prior = (
             supabase_client.table("threads")
-            .select("summary", "thread_preview")
+            .select("summary", "thread_preview", "previous_rewrites")
             .eq("user_id", payload.user_id)
             .eq("id", payload.thread_id)
             .maybe_single()
@@ -161,6 +170,10 @@ async def generate_response(payload: RequestPayload):
         )
         prior_summary = (prior.data or {}).get("summary", "")
         prior_preview = (prior.data or {}).get("thread_preview", "")
+        previous_rewrites = (prior.data or {}).get("previous_rewrites", "")
+        print("Main (previous_rewrites)", previous_rewrites)
+        previous_rewrites = normalize_rewrites(previous_rewrites)
+        print("Main (previous_rewrites)", previous_rewrites)
 
         # Trim messages to 5
         last_n = 5
@@ -173,18 +186,21 @@ async def generate_response(payload: RequestPayload):
             "id": payload.thread_id,
             "messages": trimmed_msgs,
             "history": prior_summary or "(none)",
+            "previous_rewrites": previous_rewrites
         }
 
         cfg = {"configurable": {"id": payload.thread_id, "user_id": payload.user_id}}
         result = assistant_graph.invoke(state, config=cfg)
         updated_summary = result.get("history", prior_summary or "")
         preview = result.get("thread_preview", prior_preview or "")
+        previous_rewrites = result.get("previous_rewrites", previous_rewrites or "")
         
         supabase_client.table("threads").upsert({
             "user_id": payload.user_id,
             "id": payload.thread_id,
             "summary": updated_summary,
-            "thread_preview": preview
+            "thread_preview": preview,
+            "previous_rewrites": previous_rewrites
         }).execute()
 
         

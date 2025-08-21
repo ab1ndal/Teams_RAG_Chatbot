@@ -12,6 +12,10 @@ class ResponsePayload(BaseModel):
     updated_summary: str = Field(..., description="Compact running summary (<=300 words)")
     thread_preview: str = Field(..., description="Compact running conversation history (5 words)")
 
+class CompactResponsePayload(BaseModel):
+    updated_summary: str = Field(..., description="Compact running summary (<=300 words)")
+    thread_preview: str = Field(..., description="Compact running conversation history (5 words)")
+
 def _strip_code_fences(text: str) -> str:
     t = text.strip()
     if t.startswith("```"):
@@ -20,12 +24,73 @@ def _strip_code_fences(text: str) -> str:
 
 def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantState]:
     structured = client.with_structured_output(ResponsePayload)
+    compact_structured = client.with_structured_output(CompactResponsePayload)
     def _node(state: AssistantState) -> AssistantState:
         print("Generating answer...")
-        if state.get("query_type")=="excel_insight":
+
+        if state.get("query_class")=="excel_insight":
+            print("Generating answer for excel insight...")
             state["final_answer"] = state.get("final_answer", "[No final answer generated]")
+
+            recent_history = helper.render_message_summary(state.get('messages', []), window_size=5)
+
+            system_msg = (
+            "You answer STRICTLY using the provided context only. "
+            "Return ONLY the schema fields (updated_summary, thread_preview)."
+            )
+
+            user_msg = f"""
+            Update the thread_preview, AND update a compact running summary (<=300 words), focus on decisions, assumptions, sources, constraints, and any unresolved issues.
+
+            Guidelines for the "thread_preview" field:
+            - Derive ONLY from the "Recent turns" section (max last 5 turns) and "Current Summary" section when composing the preview.
+            - Capture the core topic or action of the ongoing thread, not a verbatim quote of the last message.
+            - If the latest user turn is trivial (e.g., "ok", "continue", "thanks"), skip it and look back to the most recent contentful turn.
+            - Length: upto 5 words, plain text. No punctuation, quotes, emojis, hashtags, brackets, or citations.
+            - Use high-signal keywords; acronyms and numbers are allowed (e.g., ASCE 7-22, RFI #12).
+            - Neutral, descriptive style; avoid names and personal details unless essential to the topic.
+            - Do not invent fact
+            - If no substantive content exists, return: New chat
+            Bad examples: "continue", last question
+            Good examples: "ASCE 7 Base Shear", "Questions about TEF 2023"
+
+            Guidelines for the "updated_summary" field:
+            - Purpose: a running, persistent summary of the thread. Start from "Current Summary", then incorporate only the new information from "User Question" and generated response.
+            - Do NOT re-summarize only the latest message. Preserve prior facts unless they are explicitly contradicted.
+            - If new info conflicts with prior info, keep both and note the conflict under Open issues.
+            - Keep <= 300 words. Be concise and factual; no fluff. Do not invent details.
+            - Structure it with these labeled bullets (only include bullets that have content):
+                • Decisions: concrete choices made this thread.
+                • Assumptions: working assumptions or interpretations.
+                • Constraints: limits, requirements, or data gaps.
+                • Open issues / Next steps: unresolved questions, follow-ups, or actions.
+            - Avoid copying sentences verbatim from the last answer; summarize at a higher level.
+
+            ----
+            Current Summary (may be "(none)"):
+            {state.get('history', '(none)')}
+
+            Recent turns:
+            {recent_history}
+
+            User Question: 
+            {state.get('rewritten_query', "")}
+            """
+
+            try:
+                print("Input Summary")
+                print(state.get('history', '(none)'))
+                compact_response: CompactResponsePayload = compact_structured.invoke([
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg}
+                ])
+                state["history"] = compact_response.updated_summary
+                state["thread_preview"] = compact_response.thread_preview
+            except ValidationError as e:
+                state["error"] = f"❌ Failed to parse the response: {e}"
             return state
         else:
+            print("Not Excel Route")
             #Inputs
             ranked_chunks = state.get("ranked_chunks", [])
             # Deduplicate sources
@@ -64,13 +129,13 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
             - End with a 'Sources:' list that matches the inline indices.
 
             Guidelines for the "thread_preview" field:
-            - Derive ONLY from the "Recent turns" section (max last 5 turns) and "Current Summary" section. Ignore "User Question", "Retrieved Context", and "Sources" when composing the preview.
+            - Derive ONLY from the "Recent turns" section (max last 5 turns) and "Current Summary" section when composing the preview.
             - Capture the core topic or action of the ongoing thread, not a verbatim quote of the last message.
             - If the latest user turn is trivial (e.g., "ok", "continue", "thanks"), skip it and look back to the most recent contentful turn.
             - Length: upto 5 words, plain text. No punctuation, quotes, emojis, hashtags, brackets, or citations.
             - Use high-signal keywords; acronyms and numbers are allowed (e.g., ASCE 7-22, RFI #12).
             - Neutral, descriptive style; avoid names and personal details unless essential to the topic.
-            - Do not invent facts; the preview must be supported by "Recent turns".
+            - Do not invent fact
             - If no substantive content exists, return: New chat
             Bad examples: "continue", last question
             Good examples: "ASCE 7 Base Shear", "Questions about TEF 2023"
@@ -111,6 +176,7 @@ def generate_answer(client: ChatOpenAI) -> Callable[[AssistantState], AssistantS
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": user_msg}
                 ])
+                print("Response")
                 state["history"] = response.updated_summary
                 state["final_answer"] = response.answer
                 state["thread_preview"] = response.thread_preview
